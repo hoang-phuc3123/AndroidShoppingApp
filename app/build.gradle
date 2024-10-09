@@ -31,6 +31,11 @@ android {
 
 dependencies {
 
+    implementation libs.material.v170
+    implementation libs.recyclerview
+    implementation libs.okhttp
+    implementation libs.gson
+
     implementation libs.appcompat
     implementation libs.material
     implementation libs.activity
