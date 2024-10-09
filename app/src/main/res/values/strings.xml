@@ -7,4 +7,11 @@
     <string name="click_to_login">Click To Login</string>
     <string name="click_to_register">Click To Register</string>
     <string name="logout">Logout</string>
+    <string name="home">Home</string>
+    <string name="products">Products</string>
+    <string name="profile">Profile</string>
+    <string name="profile_picture">Profile Picture</string>
+    <string name="john_doe">John Doe</string>
+    <string name="johndoe_example_com">johndoe@example.com</string>
+    <string name="edit_profile">Edit Profile</string>
 </resources>
