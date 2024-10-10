@@ -14,4 +14,19 @@
     <string name="john_doe">John Doe</string>
     <string name="johndoe_example_com">johndoe@example.com</string>
     <string name="edit_profile">Edit Profile</string>
+    <string name="brand">Brand</string>
+    <string name="min_price">Min Price</string>
+    <string name="max_price">Max Price</string>
+    <string name="min_rating">Min Rating</string>
+    <string name="apply_filters">Apply Filters</string>
+    <string name="favorites">Favorites</string>
+    <string name="back">Back</string>
+    <string name="add_to_cart">Add to Cart</string>
+
+    <string-array name="sort_options">
+        <item>Price: Low to High</item>
+        <item>Price: High to Low</item>
+        <item>Popularity</item>
+        <item>Category</item>
+    </string-array>
 </resources>
