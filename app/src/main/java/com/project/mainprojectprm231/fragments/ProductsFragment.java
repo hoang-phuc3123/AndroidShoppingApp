@@ -2,13 +2,13 @@ package com.project.mainprojectprm231.fragments;
 
 import android.annotation.SuppressLint;
 import android.os.Bundle;
+import android.os.Handler;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.Spinner;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -16,18 +16,23 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.viewpager2.widget.ViewPager2;
 
+import com.google.android.material.tabs.TabLayout;
+import com.google.android.material.tabs.TabLayoutMediator;
 import com.google.gson.Gson;
 import com.project.mainprojectprm231.R;
+import com.project.mainprojectprm231.adapters.BannerAdapter;
 import com.project.mainprojectprm231.adapters.ProductAdapter;
+import com.project.mainprojectprm231.models.ApiResponse;
 import com.project.mainprojectprm231.models.Product;
 import com.project.mainprojectprm231.networking.ApiClient;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -36,9 +41,10 @@ import okhttp3.Response;
 public class ProductsFragment extends Fragment {
     private ProductAdapter productAdapter;
     private List<Product> productList;
-    private List<Product> originalProductList; // Keep the original list for filtering
-    private Spinner sortSpinner;
-    private Button filterButton;
+    private List<Product> filteredProductList;
+    private EditText searchEditText;
+    private ViewPager2 bannerViewPager;
+    private TabLayout bannerTabLayout;
 
     @Nullable
     @Override
@@ -46,92 +52,85 @@ public class ProductsFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_products, container, false);
 
         RecyclerView recyclerView = view.findViewById(R.id.recycler_view);
-        recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 2)); // 2 columns for grid layout
+        recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 2));
 
-        sortSpinner = view.findViewById(R.id.sort_spinner);
-        filterButton = view.findViewById(R.id.filter_button);
+        searchEditText = view.findViewById(R.id.search_edit_text);
+        view.findViewById(R.id.filter_button).setOnClickListener(v -> showFilterDialog());
+
+        bannerViewPager = view.findViewById(R.id.banner_viewpager);
+        bannerTabLayout = view.findViewById(R.id.banner_tab_layout);
 
         productList = new ArrayList<>();
-        originalProductList = new ArrayList<>(); // Keep a copy of the original list for filtering
-        productAdapter = new ProductAdapter(productList);
+        filteredProductList = new ArrayList<>();
+        productAdapter = new ProductAdapter(filteredProductList);
         recyclerView.setAdapter(productAdapter);
 
-        setupSortSpinner();
-        setupFilterButton();
-
+        setupSearch();
+        setupBannerCarousel();
         fetchProducts();
 
         return view;
     }
 
-    private void setupSortSpinner() {
-        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(getContext(),
-                R.array.sort_options, android.R.layout.simple_spinner_item);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        sortSpinner.setAdapter(adapter);
-
-        sortSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+    private void setupSearch() {
+        searchEditText.addTextChangedListener(new TextWatcher() {
             @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                sortProducts(position);
-            }
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
 
             @Override
-            public void onNothingSelected(AdapterView<?> parent) {
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                filterProducts(s.toString());
             }
         });
     }
 
-    @SuppressLint("NotifyDataSetChanged")
-    private void sortProducts(int position) {
-        switch (position) {
-            case 0: // Price: Low to High
-                productList.sort(Comparator.comparingDouble(Product::getPrice));
-                break;
-            case 1: // Price: High to Low
-                productList.sort((product1, product2) -> Double.compare(product2.getPrice(), product1.getPrice()));
-                break;
-            case 2: // Popularity
-                // Assuming you have a popularity field in the Product model
-                // productList.sort(Comparator.comparingInt(Product::getPopularity));
-                break;
-            case 3: // Category
-                // Assuming you have a category field in the Product model
-                // productList.sort(Comparator.comparing(Product::getCategory));
-                break;
-        }
-        productAdapter.notifyDataSetChanged();
-    }
-
-    private void setupFilterButton() {
-        filterButton.setOnClickListener(v -> openFilterDialog());
-    }
-
-    private void openFilterDialog() {
-        // Create and display a dialog with filtering options
-        FilterDialogFragment filterDialogFragment = new FilterDialogFragment();
-        filterDialogFragment.setTargetFragment(ProductsFragment.this, 0);
-        filterDialogFragment.show(getParentFragmentManager(), "FilterDialog");
-    }
-
-    @SuppressLint("NotifyDataSetChanged")
-    public void applyFilters(String brand, double minPrice, double maxPrice, int minRating) {
-        productList.clear();
-        for (Product product : originalProductList) {
-            boolean matchesBrand = (brand == null || brand.isEmpty() || (product.getBrand() != null && product.getBrand().equalsIgnoreCase(brand)));
-            boolean matchesPrice = false;
-            boolean matchesRating = false;
-
-            if (matchesBrand && matchesPrice && matchesRating) {
-                productList.add(product);
+    private void filterProducts(String query) {
+        filteredProductList.clear();
+        for (Product product : productList) {
+            if (product.getProductName().toLowerCase().contains(query.toLowerCase())) {
+                filteredProductList.add(product);
             }
         }
-
-        if (productList.isEmpty()) {
-            Toast.makeText(getContext(), "No products match the filters.", Toast.LENGTH_SHORT).show();
-        }
-
         productAdapter.notifyDataSetChanged();
+    }
+
+    private void showFilterDialog() {
+        // TODO: Implement category filter dialog
+        Toast.makeText(getContext(), "Category filter not implemented yet", Toast.LENGTH_SHORT).show();
+    }
+
+    private void setupBannerCarousel() {
+        List<String> bannerUrls = Arrays.asList(
+                "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2071&q=80",
+                "https://images.unsplash.com/photo-1526738549149-8e07eca6c147?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2070&q=80",
+                "https://images.unsplash.com/photo-1603302576837-37561b2e2302?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2068&q=80"
+        );
+
+        BannerAdapter bannerAdapter = new BannerAdapter(bannerUrls);
+        bannerViewPager.setAdapter(bannerAdapter);
+
+//        new TabLayoutMediator(bannerTabLayout, bannerViewPager,
+//            (tab, position) -> {
+//                View tabView = LayoutInflater.from(getContext()).inflate(R.layout.custom_tab, null);
+//                tab.setCustomView(tabView);
+//            }
+//        ).attach();
+
+        // Auto-scroll feature
+        Handler handler = new Handler();
+        Runnable runnable = new Runnable() {
+            public void run() {
+                int currentItem = bannerViewPager.getCurrentItem();
+                int totalItems = bannerAdapter.getItemCount();
+                int nextItem = (currentItem + 1) % totalItems;
+                bannerViewPager.setCurrentItem(nextItem, true);
+                handler.postDelayed(this, 3000); // Change banner every 3 seconds
+            }
+        };
+        handler.postDelayed(runnable, 3000);
     }
 
     private void fetchProducts() {
@@ -139,6 +138,11 @@ public class ProductsFragment extends Fragment {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
                 e.printStackTrace();
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() ->
+                            Toast.makeText(getContext(), "Failed to fetch products", Toast.LENGTH_SHORT).show()
+                    );
+                }
             }
 
             @SuppressLint("NotifyDataSetChanged")
@@ -148,16 +152,26 @@ public class ProductsFragment extends Fragment {
                     assert response.body() != null;
                     String jsonResponse = response.body().string();
                     Gson gson = new Gson();
-                    Product[] products = gson.fromJson(jsonResponse, Product[].class);
+                    ApiResponse apiResponse = gson.fromJson(jsonResponse, ApiResponse.class);
 
                     if (getActivity() != null) {
                         getActivity().runOnUiThread(() -> {
-                            productList.clear();
-                            originalProductList.clear();
-                            productList.addAll(Arrays.asList(products));
-                            originalProductList.addAll(Arrays.asList(products));
-                            productAdapter.notifyDataSetChanged();
+                            if (apiResponse != null && apiResponse.isSuccess() && apiResponse.getData() != null) {
+                                productList.clear();
+                                productList.addAll(apiResponse.getData().getContent());
+                                filteredProductList.clear();
+                                filteredProductList.addAll(productList);
+                                productAdapter.notifyDataSetChanged();
+                            } else {
+                                Toast.makeText(getContext(), "No products available", Toast.LENGTH_SHORT).show();
+                            }
                         });
+                    }
+                } else {
+                    if (getActivity() != null) {
+                        getActivity().runOnUiThread(() ->
+                                Toast.makeText(getContext(), "Failed to fetch products", Toast.LENGTH_SHORT).show()
+                        );
                     }
                 }
             }

@@ -5,10 +5,10 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 
 public class ApiClient {
-    private static final String BASE_URL = "https://66e1bb3ec831c8811b56281f.mockapi.io/products";
+    private static final String BASE_URL = "https://shop-mobile-api.opalwed.id.vn/api/v1/product";
+    private static final OkHttpClient client = new OkHttpClient();
 
     public static void fetchProducts(Callback callback) {
-        OkHttpClient client = new OkHttpClient();
         Request request = new Request.Builder()
                 .url(BASE_URL)
                 .build();
@@ -16,4 +16,3 @@ public class ApiClient {
         client.newCall(request).enqueue(callback);
     }
 }
-
