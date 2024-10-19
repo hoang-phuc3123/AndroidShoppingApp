@@ -37,9 +37,9 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
     @Override
     public void onBindViewHolder(@NonNull ProductViewHolder holder, int position) {
         Product product = productList.get(position);
-        holder.productName.setText(product.getName());
+        holder.productName.setText(product.getProductName());
         holder.productPrice.setText("$" + product.getPrice());
-        holder.productDescription.setText(product.getDescription());
+        holder.productDescription.setText(product.getBriefDescription());
 
         Glide.with(holder.itemView.getContext())
                 .load(product.getImageUrl())
@@ -47,12 +47,14 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
 
         holder.itemView.setOnClickListener(v -> {
             Intent intent = new Intent(holder.itemView.getContext(), ProductDetailActivity.class);
-            intent.putExtra("name", product.getName());
+            intent.putExtra("productId", product.getProductId());
+            intent.putExtra("productName", product.getProductName());
             intent.putExtra("imageUrl", product.getImageUrl());
             intent.putExtra("price", product.getPrice());
-            intent.putExtra("description", product.getDescription());
-            intent.putExtra("brand", product.getBrand());
-            intent.putExtra("rating", product.getRating());
+            intent.putExtra("briefDescription", product.getBriefDescription());
+            intent.putExtra("fullDescription", product.getFullDescription());
+            intent.putExtra("technicalSpecifications", product.getTechnicalSpecifications());
+            intent.putExtra("categoryName", product.getCategoryName());
             holder.itemView.getContext().startActivity(intent);
         });
     }
@@ -60,13 +62,6 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
     @Override
     public int getItemCount() {
         return productList.size();
-    }
-
-    @SuppressLint("NotifyDataSetChanged")
-    public void updateProducts(List<Product> newProductList) {
-        productList.clear();
-        productList.addAll(newProductList);
-        notifyDataSetChanged();
     }
 
     public static class ProductViewHolder extends RecyclerView.ViewHolder {

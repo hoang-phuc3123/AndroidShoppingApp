@@ -32,7 +32,7 @@ public class FilterDialogFragment extends DialogFragment {
 
             ProductsFragment targetFragment = (ProductsFragment) getTargetFragment();
             if (targetFragment != null) {
-                targetFragment.applyFilters(brand, minPrice, maxPrice, minRating);
+
             }
             dismiss();
         });
