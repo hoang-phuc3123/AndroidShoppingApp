@@ -1,38 +1,30 @@
 package com.project.mainprojectprm231.models;
 
 public class Product {
-    private String name;
-    private String imageUrl;
+    private int productId;
+    private String productName;
     private double price;
-    private String description;
-    private String id;
-    private String brand;
-    private int rating;
+    private String imageUrl;
+    private String briefDescription;
+    private String fullDescription;
+    private String technicalSpecifications;
+    private String categoryName;
 
-    public Product(String name, String imageUrl, double price, String description, String id, String brand, int rating) {
-        this.name = name;
-        this.imageUrl = imageUrl;
-        this.price = price;
-        this.description = description;
-        this.id = id;
-        this.brand = brand;
-        this.rating = rating;
+    // Getters and setters
+    public int getProductId() {
+        return productId;
     }
 
-    public String getName() {
-        return name;
+    public void setProductId(int productId) {
+        this.productId = productId;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public String getProductName() {
+        return productName;
     }
 
-    public String getImageUrl() {
-        return imageUrl;
-    }
-
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
+    public void setProductName(String productName) {
+        this.productName = productName;
     }
 
     public double getPrice() {
@@ -43,36 +35,43 @@ public class Product {
         this.price = price;
     }
 
-    public String getDescription() {
-        return description;
+    public String getImageUrl() {
+        return imageUrl;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 
-    public String getId() {
-        return id;
+    public String getBriefDescription() {
+        return briefDescription;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setBriefDescription(String briefDescription) {
+        this.briefDescription = briefDescription;
     }
 
-    public String getBrand() {
-        return brand;
+    public String getFullDescription() {
+        return fullDescription;
     }
 
-    public void setBrand(String brand) {
-        this.brand = brand;
+    public void setFullDescription(String fullDescription) {
+        this.fullDescription = fullDescription;
     }
 
-    public int getRating() {
-        return rating;
+    public String getTechnicalSpecifications() {
+        return technicalSpecifications;
     }
 
-    public void setRating(int rating) {
-        this.rating = rating;
+    public void setTechnicalSpecifications(String technicalSpecifications) {
+        this.technicalSpecifications = technicalSpecifications;
+    }
+
+    public String getCategoryName() {
+        return categoryName;
+    }
+
+    public void setCategoryName(String categoryName) {
+        this.categoryName = categoryName;
     }
 }
-
