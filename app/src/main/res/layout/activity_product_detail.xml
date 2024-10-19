@@ -20,6 +20,28 @@
         app:tint="@android:color/black" />
 
     <ImageView
+        android:id="@+id/ic_cart"
+        android:layout_width="49dp"
+        android:layout_height="39dp"
+        android:layout_margin="16dp"
+        android:layout_marginStart="352dp"
+        android:layout_marginTop="24dp"
+        android:layout_marginEnd="363dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:clickable="true"
+        android:contentDescription="@string/back"
+        android:focusable="true"
+        android:padding="8dp"
+        android:src="@drawable/ic_cart"
+        app:layout_constraintBottom_toTopOf="@+id/product_image_detail"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.997"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.533"
+        app:tint="@android:color/darker_gray" />
+
+    <ImageView
         android:id="@+id/product_image_detail"
         android:layout_width="0dp"
         android:layout_height="250dp"
