@@ -44,6 +44,10 @@ dependencies {
     implementation libs.activity
     implementation libs.constraintlayout
     implementation libs.firebase.auth
+    implementation libs.viewpager2
+    implementation libs.material.v140
+    implementation libs.glide.v4120
+    annotationProcessor libs.compiler.v4120
     testImplementation libs.junit
     androidTestImplementation libs.ext.junit
     androidTestImplementation libs.espresso.core
