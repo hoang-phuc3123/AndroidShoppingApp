@@ -5,7 +5,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
-
+import android.content.Intent;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.bumptech.glide.Glide;
@@ -32,6 +32,7 @@ public class ProductDetailActivity extends AppCompatActivity {
         TextView productRating = findViewById(R.id.product_rating_detail);
         ImageView productImage = findViewById(R.id.product_image_detail);
         ImageView backButton = findViewById(R.id.back_button);
+        ImageView cart = findViewById(R.id.ic_cart);
         Button addToCartButton = findViewById(R.id.add_to_cart_button);
 
         productName.setText(name);
@@ -46,6 +47,10 @@ public class ProductDetailActivity extends AppCompatActivity {
 
         addToCartButton.setOnClickListener(v -> {
             Toast.makeText(ProductDetailActivity.this, name + " added to cart", Toast.LENGTH_SHORT).show();
+        });
+        cart.setOnClickListener(v -> {
+            Intent intent = new Intent(ProductDetailActivity.this, CartActivity.class);
+            startActivity(intent);
         });
     }
 }

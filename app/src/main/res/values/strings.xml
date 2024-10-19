@@ -24,7 +24,7 @@
     <string name="add_to_cart">Add to Cart</string>
     <string name="search_products">Search products</string>
     <string name="filter">Filter</string>
-
+    <string name="cart">Cart</string>
     <string-array name="sort_options">
         <item>Price: Low to High</item>
         <item>Price: High to Low</item>
