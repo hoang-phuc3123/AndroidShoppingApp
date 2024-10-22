@@ -1,5 +1,8 @@
 package com.project.mainprojectprm231.networking;
 
+import android.text.TextUtils;
+import android.util.Log;
+
 import okhttp3.Callback;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -50,4 +53,38 @@ public class ApiClient {
 
         client.newCall(request).enqueue(callback);
     }
+
+    public static void addToCart(int productId, int userId, Callback callback) {
+        if (productId <= 0 || (userId <= 0)) {
+            Log.e("ApiClient", "Invalid parameters for addToCart. Product ID: " + productId + ", User ID: " + userId);
+            return;
+        }
+
+        MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+        JSONObject jsonObject = new JSONObject();
+        try {
+            jsonObject.put("userId", userId);
+            jsonObject.put("productId", productId);
+            jsonObject.put("quantity", 1);
+
+            Log.d("ApiClient", "JSON request body: " + jsonObject.toString());
+        } catch (Exception e) {
+            Log.e("ApiClient", "Error creating JSON request body: " + e.getMessage());
+            return;
+        }
+
+        RequestBody body = RequestBody.create(JSON, jsonObject.toString());
+        Request request = new Request.Builder()
+                .url(BASE_URL + "/cart/add")
+                .post(body)
+                .build();
+
+        client.newCall(request).enqueue(callback);
+    }
+
+
+
+
+
+
 }

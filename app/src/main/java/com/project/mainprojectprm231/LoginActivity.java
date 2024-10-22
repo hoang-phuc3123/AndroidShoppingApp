@@ -112,6 +112,7 @@ public class LoginActivity extends AppCompatActivity {
         SharedPreferences sharedPreferences = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putString(KEY_UID, uid);
+
         editor.apply();
     }
 
@@ -138,9 +139,14 @@ public class LoginActivity extends AppCompatActivity {
                         String username = userData.getString("username");
                         String phone = userData.getString("phone");
                         String address = userData.getString("address");
+                        int cartId = userData.getInt("cartId");
+                        int userId = userData.getInt("userId");
+
+                        //log user id
+                        Log.d(TAG, "User ID: " + userId);
 
                         // Save user data to SharedPreferences
-                        saveUserDataToSharedPreferences(email, username, phone, address);
+                        saveUserDataToSharedPreferences(email, username, phone, address, cartId, userId);
 
                         runOnUiThread(() -> {
                             Toast.makeText(LoginActivity.this, "User data fetched successfully", Toast.LENGTH_SHORT).show();
@@ -165,13 +171,15 @@ public class LoginActivity extends AppCompatActivity {
         });
     }
 
-    private void saveUserDataToSharedPreferences(String email, String username, String phone, String address) {
+    private void saveUserDataToSharedPreferences(String email, String username, String phone, String address, int cartId, int userId) {
         SharedPreferences sharedPreferences = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putString("email", email);
         editor.putString("username", username);
         editor.putString("phone", phone);
         editor.putString("address", address);
+        editor.putInt("cartId", cartId);
+        editor.putInt("userId", userId);
         editor.apply();
     }
 
