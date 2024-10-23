@@ -48,7 +48,6 @@ public class ProductDetailActivity extends AppCompatActivity {
         TextView productPrice = findViewById(R.id.product_price_detail);
         TextView productDescription = findViewById(R.id.product_description_detail);
         TextView productBrand = findViewById(R.id.product_brand_detail);
-        TextView cartBadge = findViewById(R.id.cart_badge);
         RatingBar productRating = findViewById(R.id.product_rating_detail);
         ImageView productImage = findViewById(R.id.product_image_detail);
         Button addToCartButton = findViewById(R.id.add_to_cart_button);
