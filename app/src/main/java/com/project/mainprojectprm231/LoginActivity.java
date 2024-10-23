@@ -144,7 +144,7 @@ public class LoginActivity extends AppCompatActivity {
 
                         //log user id
                         Log.d(TAG, "User ID: " + userId);
-
+                        Log.d(TAG, "cart ID: " + cartId);
                         // Save user data to SharedPreferences
                         saveUserDataToSharedPreferences(email, username, phone, address, cartId, userId);
 

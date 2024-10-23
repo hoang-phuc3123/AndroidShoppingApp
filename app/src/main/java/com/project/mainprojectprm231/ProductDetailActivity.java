@@ -48,7 +48,7 @@ public class ProductDetailActivity extends AppCompatActivity {
         TextView productPrice = findViewById(R.id.product_price_detail);
         TextView productDescription = findViewById(R.id.product_description_detail);
         TextView productBrand = findViewById(R.id.product_brand_detail);
-        TextView cartBadge = findViewById(R.id.cart_badge);
+//        TextView cartBadge = findViewById(R.id.cart_badge);
         RatingBar productRating = findViewById(R.id.product_rating_detail);
         ImageView productImage = findViewById(R.id.product_image_detail);
         Button addToCartButton = findViewById(R.id.add_to_cart_button);
@@ -109,6 +109,8 @@ public class ProductDetailActivity extends AppCompatActivity {
         // Handle cart icon click
         cart.setOnClickListener(v -> {
             Intent intent = new Intent(ProductDetailActivity.this, CartActivity.class);
+//            intent.putExtra("brand", brand);
+//            intent.putExtra("imageUrl", imageUrl); // Pass the image URL here
             startActivity(intent);
         });
     }

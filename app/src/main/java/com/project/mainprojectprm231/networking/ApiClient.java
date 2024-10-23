@@ -22,6 +22,14 @@ public class ApiClient {
 
         client.newCall(request).enqueue(callback);
     }
+    public static void fetchCartItems(int userId, int page, int size, Callback callback) {
+        String url = String.format(BASE_URL + "/cart?id=%d&page=%d&size=%d", userId, page, size);
+        Request request = new Request.Builder()
+                .url(url)
+                .build();
+        Log.d("url", "url: " + url);
+        client.newCall(request).enqueue(callback);
+    }
 
     public static void registerUser(String email, String username, String password, String phone, String address, Callback callback) {
         MediaType JSON = MediaType.parse("application/json; charset=utf-8");
