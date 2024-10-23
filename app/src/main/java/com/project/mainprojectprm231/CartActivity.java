@@ -1,5 +1,6 @@
 package com.project.mainprojectprm231;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -33,7 +34,8 @@ public class CartActivity extends AppCompatActivity {
 
         checkoutButton.setOnClickListener(v -> {
             Toast.makeText(CartActivity.this, " Checkout cart", Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(getApplicationContext(), OrderActivity.class);
+            startActivity(intent);
         });
-
     }
 }
