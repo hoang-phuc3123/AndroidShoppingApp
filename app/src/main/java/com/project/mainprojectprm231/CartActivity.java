@@ -58,6 +58,7 @@ public class CartActivity extends AppCompatActivity {
         totaluniTextReview = findViewById(R.id.unitpricevalue);
         ImageView backButton = findViewById(R.id.back_buttoncart);
         Button checkoutButton = findViewById(R.id.button_checkout);
+        ImageView deleteAllButton = findViewById(R.id.deleteall);
 
         // Setup RecyclerView
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -75,14 +76,17 @@ public class CartActivity extends AppCompatActivity {
         checkoutButton.setOnClickListener(v -> {
             Toast.makeText(CartActivity.this, "Checkout cart", Toast.LENGTH_SHORT).show();
         });
+        deleteAllButton.setOnClickListener(v -> clearAllCartItems());
 
         // Fetch cart items when the activity is created
         fetchCartItems();
+
     }
 
     private void fetchCartItems() {
         int page = 0;
-        int size = 10;
+        int size = cartList.size();
+
         SharedPreferences sharedPreferences = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
         int cartId = sharedPreferences.getInt("cartId", 0);
 
@@ -139,4 +143,138 @@ public class CartActivity extends AppCompatActivity {
             }
         });
     }
+
+    public void removeFromCart(int itemId) {
+        ApiClient.removeFromCart(itemId, new Callback() {
+
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                e.printStackTrace();
+                runOnUiThread(() ->
+                        Toast.makeText(CartActivity.this, "Failed to remove item from cart", Toast.LENGTH_SHORT).show()
+                );
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    runOnUiThread(() -> {
+                        // Remove item from cartList
+                        for (CartItem item : cartList) {
+
+                            Log.d("TAG", "item.getItemId() == itemId: " + (item.getItemId() == itemId));
+                            if (item.getItemId() == itemId) {
+                                cartList.remove(item);
+                                break;
+                            }
+                        }
+
+                        // Recalculate total price
+                        cartTotalPrice = 0.0;
+                        totalunitprice = 0.0;
+                        for (CartItem item : cartList) {
+                            cartTotalPrice += item.getTotalPrice();
+                            totalunitprice += item.getUnitPrice();
+                        }
+
+                        // Update total price display
+                        totalPriceTextView.setText("$" + String.format("%.2f", cartTotalPrice));
+                        totaluniTextReview.setText("$" + String.format("%.2f", totalunitprice));
+
+                        // Notify adapter of data change
+                        cartAdapter.notifyDataSetChanged();
+                        Toast.makeText(CartActivity.this, "Item removed from cart", Toast.LENGTH_SHORT).show();
+                    });
+                } else {
+                    runOnUiThread(() ->
+                            Toast.makeText(CartActivity.this, "Failed to remove item from cart", Toast.LENGTH_SHORT).show()
+                    );
+                }
+            }
+        });
+    }
+
+    private void clearAllCartItems() {
+        SharedPreferences sharedPreferences = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
+        int cartId = sharedPreferences.getInt("cartId", 0);
+
+        ApiClient.clearCart(cartId, new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                e.printStackTrace();
+                runOnUiThread(() ->
+                        Toast.makeText(CartActivity.this, "Failed to clear cart items", Toast.LENGTH_SHORT).show()
+                );
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    runOnUiThread(() -> {
+                        cartList.clear();
+                        cartAdapter.notifyDataSetChanged();
+                        cartTotalPrice = 0.0;
+                        totalunitprice = 0.0;
+                        totalPriceTextView.setText("$0.00");
+                        totaluniTextReview.setText("$0.00");
+                        Toast.makeText(CartActivity.this, "All cart items cleared", Toast.LENGTH_SHORT).show();
+                    });
+                } else {
+                    runOnUiThread(() ->
+                            Toast.makeText(CartActivity.this, "Failed to clear cart items", Toast.LENGTH_SHORT).show()
+                    );
+                }
+            }
+        });
+    }
+
+
+    public void updateCartItemQuantity(int itemId, int quantity) {
+        ApiClient.updateCartItemQuantity(itemId, quantity, new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                e.printStackTrace();
+                runOnUiThread(() ->
+                        Toast.makeText(CartActivity.this, "Failed to update quantity", Toast.LENGTH_SHORT).show()
+                );
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    runOnUiThread(() -> {
+                        // Update the cart item in the list
+                        for (CartItem item : cartList) {
+                            if (item.getItemId() == itemId) {
+                                item.setQuantity(quantity);
+                                // Update total price for the item
+                                item.setTotalPrice(item.getUnitPrice() * quantity);
+                                break;
+                            }
+                        }
+
+                        // Recalculate total prices
+                        cartTotalPrice = 0.0;
+                        totalunitprice = 0.0;
+                        for (CartItem item : cartList) {
+                            cartTotalPrice += item.getTotalPrice();
+                            totalunitprice += item.getUnitPrice();
+                        }
+
+                        // Update UI
+                        totalPriceTextView.setText("$" + String.format("%.2f", cartTotalPrice));
+                        totaluniTextReview.setText("$" + String.format("%.2f", totalunitprice));
+                        cartAdapter.notifyDataSetChanged();
+                        Toast.makeText(CartActivity.this, "Quantity updated successfully", Toast.LENGTH_SHORT).show();
+                    });
+                } else {
+                    runOnUiThread(() ->
+                            Toast.makeText(CartActivity.this, "Failed to update quantity", Toast.LENGTH_SHORT).show()
+                    );
+                }
+            }
+        });
+    }
+
+
 }

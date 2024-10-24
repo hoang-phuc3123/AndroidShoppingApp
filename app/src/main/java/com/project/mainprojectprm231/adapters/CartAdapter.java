@@ -1,6 +1,7 @@
 package com.project.mainprojectprm231.adapters;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,6 +11,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+import com.project.mainprojectprm231.CartActivity;
 
 import com.bumptech.glide.Glide;
 import com.project.mainprojectprm231.R;
@@ -51,10 +53,13 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
         // Handle quantity increase button click
         holder.buttonIncrease.setOnClickListener(v -> {
             int currentQuantity = cartItem.getQuantity();
-            cartItem.setQuantity(currentQuantity + 1);
-            holder.productQuantity.setText(String.valueOf(cartItem.getQuantity()));
+            int newQuantity = currentQuantity + 1;
+
+//            cartItem.setQuantity(currentQuantity + 1);
+//            holder.productQuantity.setText(String.valueOf(cartItem.getQuantity()));
             // Update the price based on new quantity
-            updateItemPrice(cartItem);
+            ((CartActivity) context).updateCartItemQuantity(cartItem.getItemId(), newQuantity);
+
             notifyItemChanged(position);
         });
 
@@ -62,19 +67,20 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
         holder.buttonDecrease.setOnClickListener(v -> {
             int currentQuantity = cartItem.getQuantity();
             if (currentQuantity > 1) {
-                cartItem.setQuantity(currentQuantity - 1);
-                holder.productQuantity.setText(String.valueOf(cartItem.getQuantity()));
+                int newQuantity = currentQuantity - 1;
+//                cartItem.setQuantity(currentQuantity - 1);
+//                holder.productQuantity.setText(String.valueOf(cartItem.getQuantity()));
                 // Update the price based on new quantity
-                updateItemPrice(cartItem);
-                notifyItemChanged(position);
+                ((CartActivity) context).updateCartItemQuantity(cartItem.getItemId(), newQuantity);
+
             }
         });
 
         // Handle delete item button click
         holder.trashButton.setOnClickListener(v -> {
-            cartItems.remove(position);
-            notifyItemRemoved(position);
-            notifyItemRangeChanged(position, cartItems.size());
+            int itemId = cartItem.getItemId();
+            Log.d("TAG", "itemId: " + itemId);
+            ((CartActivity) context).removeFromCart(itemId); // Call remove method in CartActivity
         });
     }
 

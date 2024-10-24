@@ -90,8 +90,38 @@ public class ApiClient {
         client.newCall(request).enqueue(callback);
     }
 
+    public static void removeFromCart(int itemId, Callback callback) {
+        String url = BASE_URL + "/cart/remove?itemId=" + itemId;
+        Request request = new Request.Builder()
+                .url(url)
+                .delete()
+                .build();
 
+        Log.d("url", "Remove from cart URL: " + url);
+        client.newCall(request).enqueue(callback);
+    }
+    public static void clearCart(int cartId, Callback callback) {
+        String url = BASE_URL + "/cart/clear?cartId=" + cartId;
+        Request request = new Request.Builder()
+                .url(url)
+                .delete()
+                .build();
+        client.newCall(request).enqueue(callback);
+    }
+    public static void updateCartItemQuantity(int itemId, int quantity, Callback callback) {
+        String url = String.format(BASE_URL + "/cart/update?itemId=%d&quantity=%d", itemId, quantity);
 
+        // Create empty request body since we're passing parameters in URL
+        RequestBody emptyBody = RequestBody.create(null, new byte[0]);
+
+        Request request = new Request.Builder()
+                .url(url)
+                .put(emptyBody)  // PUT request requires a body, even if empty
+                .build();
+
+        Log.d("ApiClient", "Update cart URL: " + url);
+        client.newCall(request).enqueue(callback);
+    }
 
 
 
