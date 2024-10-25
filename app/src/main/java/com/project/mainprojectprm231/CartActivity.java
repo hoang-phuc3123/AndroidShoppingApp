@@ -1,5 +1,4 @@
-package com.project.mainprojectprm231;
-
+        package com.project.mainprojectprm231;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -180,9 +179,18 @@ public class CartActivity extends AppCompatActivity {
                         totalPriceTextView.setText("$" + String.format("%.2f", cartTotalPrice));
                         totalUnitPriceTextView.setText("$" + String.format("%.2f", totalUnitPrice));
 
+                        // Update cart item count in SharedPreferences
+                        SharedPreferences sharedPreferences = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
+                        sharedPreferences.edit().putInt("cartItemCount", cartList.size()).apply();
+
                         // Notify adapter of data change
                         cartAdapter.notifyDataSetChanged();
                         Toast.makeText(CartActivity.this, "Item removed from cart", Toast.LENGTH_SHORT).show();
+
+                        // Send broadcast to update cart badge
+                        Intent intent = new Intent("UPDATE_CART_BADGE");
+                        intent.putExtra("cartItemCount", cartList.size());
+                        sendBroadcast(intent);
                     });
                 } else {
                     runOnUiThread(() ->
@@ -201,9 +209,7 @@ public class CartActivity extends AppCompatActivity {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
                 e.printStackTrace();
-                runOnUiThread(() ->
-                        Toast.makeText(CartActivity.this, "Failed to clear cart items", Toast.LENGTH_SHORT).show()
-                );
+                runOnUiThread(() -> Toast.makeText(CartActivity.this, "Failed to clear cart items", Toast.LENGTH_SHORT).show());
             }
 
             @Override
@@ -216,12 +222,19 @@ public class CartActivity extends AppCompatActivity {
                         totalUnitPrice = 0.0;
                         totalPriceTextView.setText("$0.00");
                         totalUnitPriceTextView.setText("$0.00");
+
+                        // Cập nhật số lượng sản phẩm trong SharedPreferences
+                        sharedPreferences.edit().putInt("cartItemCount", 0).apply();
+
+                        // Gửi broadcast để cập nhật cart badge
+                        Intent intent = new Intent("UPDATE_CART_BADGE");
+                        intent.putExtra("cartItemCount", 0);
+                        sendBroadcast(intent);
+
                         Toast.makeText(CartActivity.this, "All cart items cleared", Toast.LENGTH_SHORT).show();
                     });
                 } else {
-                    runOnUiThread(() ->
-                            Toast.makeText(CartActivity.this, "Failed to clear cart items", Toast.LENGTH_SHORT).show()
-                    );
+                    runOnUiThread(() -> Toast.makeText(CartActivity.this, "Failed to clear cart items", Toast.LENGTH_SHORT).show());
                 }
             }
         });
@@ -251,7 +264,7 @@ public class CartActivity extends AppCompatActivity {
                             }
                         }
 
-                        // Recalculate total prices
+                        // Recalculate total price
                         cartTotalPrice = 0.0;
                         totalUnitPrice = 0.0;
                         for (CartItem item : cartList) {
@@ -259,11 +272,22 @@ public class CartActivity extends AppCompatActivity {
                             totalUnitPrice += item.getUnitPrice();
                         }
 
-                        // Update UI
+                        // Update total price display
                         totalPriceTextView.setText("$" + String.format("%.2f", cartTotalPrice));
                         totalUnitPriceTextView.setText("$" + String.format("%.2f", totalUnitPrice));
+
+                        // Update cart item count in SharedPreferences
+                        SharedPreferences sharedPreferences = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
+                        sharedPreferences.edit().putInt("cartItemCount", cartList.size()).apply();
+
+                        // Notify adapter of data change
                         cartAdapter.notifyDataSetChanged();
-                        Toast.makeText(CartActivity.this, "Quantity updated successfully", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(CartActivity.this, "Quantity updated", Toast.LENGTH_SHORT).show();
+
+                        // Send broadcast to update cart badge
+                        Intent intent = new Intent("UPDATE_CART_BADGE");
+                        intent.putExtra("cartItemCount", cartList.size());
+                        sendBroadcast(intent);
                     });
                 } else {
                     runOnUiThread(() ->

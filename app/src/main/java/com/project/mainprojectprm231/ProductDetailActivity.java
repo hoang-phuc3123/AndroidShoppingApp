@@ -1,8 +1,12 @@
 package com.project.mainprojectprm231;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -29,6 +33,7 @@ public class ProductDetailActivity extends AppCompatActivity {
 
     private static final String PREF_NAME = "UserPrefs";
     private ImageView cart;
+    private BroadcastReceiver cartUpdateReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,6 +48,13 @@ public class ProductDetailActivity extends AppCompatActivity {
         String brand = getIntent().getStringExtra("categoryName");
         float rating = getIntent().getFloatExtra("rating", 0);
         int productId = getIntent().getIntExtra("productId", 0);
+
+        // Check if required data is available
+        if (name == null || imageUrl == null || description == null || brand == null) {
+            Toast.makeText(this, "Missing product details", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
 
         // Set up UI elements
         TextView productName = findViewById(R.id.product_name_detail);
@@ -86,39 +98,19 @@ public class ProductDetailActivity extends AppCompatActivity {
             ApiClient.addToCart(productId, userId, new Callback() {
                 @Override
                 public void onFailure(Call call, IOException e) {
-                    runOnUiThread(() -> {
-                        Log.e("AddToCart", "API call failed: " + e.getMessage());
-                        Toast.makeText(ProductDetailActivity.this, "Failed to add product to cart", Toast.LENGTH_SHORT).show();
-                    });
+                    runOnUiThread(() -> Toast.makeText(ProductDetailActivity.this, "Failed to add to cart", Toast.LENGTH_SHORT).show());
                 }
 
                 @Override
                 public void onResponse(Call call, Response response) throws IOException {
                     if (response.isSuccessful()) {
                         runOnUiThread(() -> {
-                            Toast.makeText(ProductDetailActivity.this, "Product added to cart successfully", Toast.LENGTH_SHORT).show();
-
-                            // Increase cart item count and save to SharedPreferences
-                            int newCartItemCount = getCartItemCount() + 1;
-                            SharedPreferences.Editor editor = getSharedPreferences(PREF_NAME, MODE_PRIVATE).edit();
-                            editor.putInt("cartItemCount", newCartItemCount);
-                            editor.apply();
-
                             // Update cart badge
-                            updateCartBadge(newCartItemCount);
-
-                            // Change cart icon color to red
-                            cart.setColorFilter(Color.RED);
-
-                            // Change cart icon back to black after 4 seconds
-                            cart.postDelayed(() -> cart.setColorFilter(Color.BLACK), 4000);
+                            updateCartBadge(getCartItemCount() + 1);
+                            Toast.makeText(ProductDetailActivity.this, "Added to cart", Toast.LENGTH_SHORT).show();
                         });
                     } else {
-                        String errorBody = response.body() != null ? response.body().string() : "Unknown error";
-                        Log.e("AddToCart", "API call unsuccessful. Code: " + response.code() + ", Message: " + response.message() + ", Body: " + errorBody);
-                        runOnUiThread(() -> {
-                            Toast.makeText(ProductDetailActivity.this, "Failed to add product to cart. Status: " + response.code(), Toast.LENGTH_LONG).show();
-                        });
+                        runOnUiThread(() -> Toast.makeText(ProductDetailActivity.this, "Failed to add to cart", Toast.LENGTH_SHORT).show());
                     }
                 }
             });
@@ -129,13 +121,37 @@ public class ProductDetailActivity extends AppCompatActivity {
             Intent intent = new Intent(ProductDetailActivity.this, CartActivity.class);
             startActivityForResult(intent, 1);
         });
+
+        // Register BroadcastReceiver to update cart badge
+        cartUpdateReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                int itemCount = intent.getIntExtra("cartItemCount", 0);
+                updateCartBadge(itemCount);
+            }
+        };
+
+        IntentFilter filter = new IntentFilter("UPDATE_CART_BADGE");
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            registerReceiver(cartUpdateReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            registerReceiver(cartUpdateReceiver, filter);
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (cartUpdateReceiver != null) {
+            unregisterReceiver(cartUpdateReceiver);
+        }
     }
 
     private void updateCartBadge(int itemCount) {
         TextView cartBadge = findViewById(R.id.cart_badge);
         if (itemCount > 0) {
-            cartBadge.setText(String.valueOf(itemCount));
             cartBadge.setVisibility(View.VISIBLE);
+            cartBadge.setText(String.valueOf(itemCount));
         } else {
             cartBadge.setVisibility(View.GONE);
         }
