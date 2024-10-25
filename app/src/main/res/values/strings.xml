@@ -24,6 +24,7 @@
     <string name="add_to_cart">Add to Cart</string>
     <string name="search_products">Search products</string>
     <string name="filter">Filter</string>
+    <string name="cart">Cart</string>
     <string name="description">Description</string>
     <string name="phone">Phone</string>
     <string name="address">Address</string>

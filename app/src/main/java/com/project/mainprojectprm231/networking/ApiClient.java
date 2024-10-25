@@ -1,5 +1,8 @@
 package com.project.mainprojectprm231.networking;
 
+import android.text.TextUtils;
+import android.util.Log;
+
 import okhttp3.Callback;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -17,6 +20,14 @@ public class ApiClient {
                 .url(BASE_URL + "/product")
                 .build();
 
+        client.newCall(request).enqueue(callback);
+    }
+    public static void fetchCartItems(int userId, int page, int size, Callback callback) {
+        String url = String.format(BASE_URL + "/cart?id=%d&page=%d&size=%d", userId, page, size);
+        Request request = new Request.Builder()
+                .url(url)
+                .build();
+        Log.d("url", "url: " + url);
         client.newCall(request).enqueue(callback);
     }
 
@@ -50,4 +61,68 @@ public class ApiClient {
 
         client.newCall(request).enqueue(callback);
     }
+
+    public static void addToCart(int productId, int userId, Callback callback) {
+        if (productId <= 0 || (userId <= 0)) {
+            Log.e("ApiClient", "Invalid parameters for addToCart. Product ID: " + productId + ", User ID: " + userId);
+            return;
+        }
+
+        MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+        JSONObject jsonObject = new JSONObject();
+        try {
+            jsonObject.put("userId", userId);
+            jsonObject.put("productId", productId);
+            jsonObject.put("quantity", 1);
+
+            Log.d("ApiClient", "JSON request body: " + jsonObject.toString());
+        } catch (Exception e) {
+            Log.e("ApiClient", "Error creating JSON request body: " + e.getMessage());
+            return;
+        }
+
+        RequestBody body = RequestBody.create(JSON, jsonObject.toString());
+        Request request = new Request.Builder()
+                .url(BASE_URL + "/cart/add")
+                .post(body)
+                .build();
+
+        client.newCall(request).enqueue(callback);
+    }
+
+    public static void removeFromCart(int itemId, Callback callback) {
+        String url = BASE_URL + "/cart/remove?itemId=" + itemId;
+        Request request = new Request.Builder()
+                .url(url)
+                .delete()
+                .build();
+
+        Log.d("url", "Remove from cart URL: " + url);
+        client.newCall(request).enqueue(callback);
+    }
+    public static void clearCart(int cartId, Callback callback) {
+        String url = BASE_URL + "/cart/clear?cartId=" + cartId;
+        Request request = new Request.Builder()
+                .url(url)
+                .delete()
+                .build();
+        client.newCall(request).enqueue(callback);
+    }
+    public static void updateCartItemQuantity(int itemId, int quantity, Callback callback) {
+        String url = String.format(BASE_URL + "/cart/update?itemId=%d&quantity=%d", itemId, quantity);
+
+        // Create empty request body since we're passing parameters in URL
+        RequestBody emptyBody = RequestBody.create(null, new byte[0]);
+
+        Request request = new Request.Builder()
+                .url(url)
+                .put(emptyBody)  // PUT request requires a body, even if empty
+                .build();
+
+        Log.d("ApiClient", "Update cart URL: " + url);
+        client.newCall(request).enqueue(callback);
+    }
+
+
+
 }
