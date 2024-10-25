@@ -22,6 +22,15 @@ public class ApiClient {
 
         client.newCall(request).enqueue(callback);
     }
+    
+    public static void fetchStoreLocation(Callback callback) {
+        Request request = new Request.Builder()
+                .url(BASE_URL + "/location")
+                .build();
+
+        client.newCall(request).enqueue(callback);
+    }
+
     public static void fetchCartItems(int userId, int page, int size, Callback callback) {
         String url = String.format(BASE_URL + "/cart?id=%d&page=%d&size=%d", userId, page, size);
         Request request = new Request.Builder()
@@ -122,7 +131,7 @@ public class ApiClient {
         Log.d("ApiClient", "Update cart URL: " + url);
         client.newCall(request).enqueue(callback);
     }
-
-
+    
+    
 
 }

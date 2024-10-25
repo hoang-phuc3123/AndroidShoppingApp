@@ -33,6 +33,7 @@ dependencies {
 
     implementation libs.material.v170
     implementation libs.recyclerview
+    implementation libs.cardview
     implementation libs.okhttp
     implementation libs.gson
 
@@ -46,8 +47,8 @@ dependencies {
     implementation libs.constraintlayout
     implementation libs.firebase.auth
     implementation libs.viewpager2
-    implementation 'androidx.core:core:1.9.0'
-    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation libs.core
+    implementation libs.appcompat.v161
     implementation libs.material.v140
     implementation libs.glide.v4120
     annotationProcessor libs.compiler.v4120
