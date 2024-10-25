@@ -46,8 +46,8 @@ dependencies {
     implementation libs.constraintlayout
     implementation libs.firebase.auth
     implementation libs.viewpager2
-    implementation 'androidx.core:core:1.9.0'
-    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'androidx.core:core:1.10.1'
+    implementation 'androidx.core:core-ktx:1.12.0'
     implementation libs.material.v140
     implementation libs.glide.v4120
     annotationProcessor libs.compiler.v4120
