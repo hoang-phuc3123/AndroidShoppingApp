@@ -225,6 +225,7 @@ public class CartActivity extends AppCompatActivity {
 
                         sharedPreferences.edit().putInt("cartItemCount", 0).apply();
 
+
                         Intent intent = new Intent("UPDATE_CART_BADGE");
                         intent.putExtra("cartItemCount", 0);
                         sendBroadcast(intent);
