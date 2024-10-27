@@ -223,10 +223,8 @@ public class CartActivity extends AppCompatActivity {
                         totalPriceTextView.setText("$0.00");
                         totalUnitPriceTextView.setText("$0.00");
 
-                        // Cập nhật số lượng sản phẩm trong SharedPreferences
                         sharedPreferences.edit().putInt("cartItemCount", 0).apply();
 
-                        // Gửi broadcast để cập nhật cart badge
                         Intent intent = new Intent("UPDATE_CART_BADGE");
                         intent.putExtra("cartItemCount", 0);
                         sendBroadcast(intent);
