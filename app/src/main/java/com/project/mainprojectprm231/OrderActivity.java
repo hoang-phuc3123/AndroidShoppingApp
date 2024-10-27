@@ -3,6 +3,7 @@ package com.project.mainprojectprm231;
 import android.annotation.SuppressLint;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -10,11 +11,13 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.content.Intent;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import com.google.android.material.button.MaterialButton;
 
 import com.google.android.material.textfield.MaterialAutoCompleteTextView;
 import com.google.gson.Gson;
@@ -45,10 +48,13 @@ public class OrderActivity extends AppCompatActivity {
     private TextView totalAmountText;
     private RecyclerView recyclerView;
     private List<StoreLocation> storeLocations;
+    private MaterialButton mapMarkerButton;
+
     private List<CartItem> orderItems;
     private int selectedStoreId = 0;
     private double totalAmount = 0.0;
-
+    private double selectedStoreLat = 0.0;
+    private double selectedStoreLng = 0.0;
     @SuppressLint("WrongViewCast")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,6 +68,8 @@ public class OrderActivity extends AppCompatActivity {
         totalAmountText = findViewById(R.id.textTotalAmount);
         recyclerView = findViewById(R.id.recyclerViewOrderItems);
         Button submitOrderBtn = findViewById(R.id.button_submit_order);
+        mapMarkerButton = findViewById(R.id.button_map_marker);
+        mapMarkerButton.setEnabled(false);
 
         // Setup RecyclerView
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -75,9 +83,79 @@ public class OrderActivity extends AppCompatActivity {
         // Fetch store locations
         fetchStoreLocations();
 
+        mapMarkerButton.setOnClickListener(v -> openMap());
+
         // Setup submit button
         submitOrderBtn.setOnClickListener(v -> submitOrder());
     }
+
+    private void fetchStoreLocationDetails(int storeId) {
+        mapMarkerButton.setEnabled(false); // Disable button while loading
+
+        ApiClient.fetchStoreLocationDetail(storeId, new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                runOnUiThread(() -> {
+                    Toast.makeText(OrderActivity.this,
+                            "Failed to fetch store details",
+                            Toast.LENGTH_SHORT).show();
+                    mapMarkerButton.setEnabled(false);
+                });
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                if (response.isSuccessful() && response.body() != null) {
+                    String jsonResponse = response.body().string();
+                    try {
+                        JSONObject jsonObject = new JSONObject(jsonResponse);
+                        JSONObject data = jsonObject.getJSONObject("data");
+
+                        selectedStoreLat = data.getDouble("latitude");
+                        selectedStoreLng = data.getDouble("longitude");
+
+                        runOnUiThread(() -> mapMarkerButton.setEnabled(true));
+
+                        Log.d("TAG", "Store location details - Lat: " + selectedStoreLat +
+                                ", Lng: " + selectedStoreLng);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        runOnUiThread(() -> {
+                            Toast.makeText(OrderActivity.this,
+                                    "Error processing store location data",
+                                    Toast.LENGTH_SHORT).show();
+                            mapMarkerButton.setEnabled(false);
+                        });
+                    }
+                }
+            }
+        });
+    }
+
+    private void openMap() {
+//        Log.d("TAG", "Opening map with lat: " + selectedStoreLat + ", lng: " + selectedStoreLng);
+
+        if (selectedStoreLat != 0.0 && selectedStoreLng != 0.0) {
+            try {
+                Intent intent = new Intent(OrderActivity.this, MapActivity.class);
+                intent.putExtra("latitude", selectedStoreLat);
+                intent.putExtra("longitude", selectedStoreLng);
+                intent.putExtra("storeId", selectedStoreId);
+                Log.d("TAG", "Starting MapActivity with extras: " +
+                        "storeId=" + selectedStoreId +
+                        ", lat=" + selectedStoreLat +
+                        ", lng=" + selectedStoreLng);
+                startActivity(intent);
+            } catch (Exception e) {
+                Log.e("TAG", "Error starting MapActivity", e);
+                Toast.makeText(this, "Error opening map: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        } else {
+            Log.e("TAG", "Invalid coordinates: lat=" + selectedStoreLat + ", lng=" + selectedStoreLng);
+            Toast.makeText(this, "Store location coordinates not available", Toast.LENGTH_SHORT).show();
+        }
+    }
+
 
     private void setupPaymentMethodDropdown() {
         String[] paymentMethods = {"Cash", "Credit Card", "Bank Transfer"};
@@ -138,6 +216,8 @@ public class OrderActivity extends AppCompatActivity {
         storeLocationAutoComplete.setOnItemClickListener((parent, view, position, id) -> {
             StoreLocation selectedLocation = storeLocations.get(position);
             selectedStoreId = selectedLocation.getId();
+            fetchStoreLocationDetails(selectedStoreId);
+
         });
     }
 

@@ -1,10 +1,11 @@
 package com.project.mainprojectprm231.models;
+import java.io.Serializable;
 
 import androidx.annotation.NonNull;
 
 import com.google.gson.annotations.SerializedName;
 
-public class StoreLocation {
+public class StoreLocation implements Serializable{
     @SerializedName("locationId")
     private int id;
     private double latitude;
