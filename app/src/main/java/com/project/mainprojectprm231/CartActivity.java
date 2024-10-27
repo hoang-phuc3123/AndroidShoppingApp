@@ -1,5 +1,4 @@
-package com.project.mainprojectprm231;
-
+        package com.project.mainprojectprm231;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -41,9 +40,10 @@ public class CartActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private CartAdapter cartAdapter;
     private TextView totalPriceTextView;
-    private TextView totaluniTextReview;
+    private TextView totalUnitPriceTextView;
     private double cartTotalPrice = 0.0;
-    private double totalunitprice = 0.0;
+    private double totalUnitPrice = 0.0;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -56,7 +56,7 @@ public class CartActivity extends AppCompatActivity {
         // Initialize views
         recyclerView = findViewById(R.id.recyclerViewCart);
         totalPriceTextView = findViewById(R.id.total_value);
-        totaluniTextReview = findViewById(R.id.unitpricevalue);
+        totalUnitPriceTextView = findViewById(R.id.unitpricevalue);
         ImageView backButton = findViewById(R.id.back_buttoncart);
         Button checkoutButton = findViewById(R.id.button_checkout);
         ImageView deleteAllButton = findViewById(R.id.deleteall);
@@ -75,14 +75,12 @@ public class CartActivity extends AppCompatActivity {
         // Set click listeners
         backButton.setOnClickListener(v -> onBackPressed());
         checkoutButton.setOnClickListener(v -> {
-            Intent intent = new Intent(CartActivity.this, OrderActivity.class);
-            startActivity(intent);
+            Toast.makeText(CartActivity.this, "Checkout cart", Toast.LENGTH_SHORT).show();
         });
         deleteAllButton.setOnClickListener(v -> clearAllCartItems());
 
         // Fetch cart items when the activity is created
         fetchCartItems();
-
     }
 
     private void fetchCartItems() {
@@ -117,20 +115,20 @@ public class CartActivity extends AppCompatActivity {
                             if (!cartList.isEmpty()) {
                                 // Reset cartTotalPrice
                                 cartTotalPrice = 0.0;
-                                totalunitprice = 0.0;
+                                totalUnitPrice = 0.0;
                                 // Calculate total price of all items
                                 for (CartItem item : cartList) {
                                     cartTotalPrice += item.getTotalPrice();
-                                    totalunitprice += item.getUnitPrice();
+                                    totalUnitPrice += item.getUnitPrice();
                                     Log.d("TAG", "onResponse: " + item.getTotalPrice());
                                 }
 
                                 // Update total price display
                                 totalPriceTextView.setText("$" + String.format("%.2f", cartTotalPrice));
-                                totaluniTextReview.setText("$" + String.format("%.2f", totalunitprice));
+                                totalUnitPriceTextView.setText("$" + String.format("%.2f", totalUnitPrice));
                                 // Notify adapter of data change
                                 cartAdapter.notifyDataSetChanged();
-                            }  else {
+                            } else {
                                 Toast.makeText(CartActivity.this, "No cart items available", Toast.LENGTH_SHORT).show();
                             }
                         } else {
@@ -163,8 +161,6 @@ public class CartActivity extends AppCompatActivity {
                     runOnUiThread(() -> {
                         // Remove item from cartList
                         for (CartItem item : cartList) {
-
-                            Log.d("TAG", "item.getItemId() == itemId: " + (item.getItemId() == itemId));
                             if (item.getItemId() == itemId) {
                                 cartList.remove(item);
                                 break;
@@ -173,19 +169,28 @@ public class CartActivity extends AppCompatActivity {
 
                         // Recalculate total price
                         cartTotalPrice = 0.0;
-                        totalunitprice = 0.0;
+                        totalUnitPrice = 0.0;
                         for (CartItem item : cartList) {
                             cartTotalPrice += item.getTotalPrice();
-                            totalunitprice += item.getUnitPrice();
+                            totalUnitPrice += item.getUnitPrice();
                         }
 
                         // Update total price display
                         totalPriceTextView.setText("$" + String.format("%.2f", cartTotalPrice));
-                        totaluniTextReview.setText("$" + String.format("%.2f", totalunitprice));
+                        totalUnitPriceTextView.setText("$" + String.format("%.2f", totalUnitPrice));
+
+                        // Update cart item count in SharedPreferences
+                        SharedPreferences sharedPreferences = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
+                        sharedPreferences.edit().putInt("cartItemCount", cartList.size()).apply();
 
                         // Notify adapter of data change
                         cartAdapter.notifyDataSetChanged();
                         Toast.makeText(CartActivity.this, "Item removed from cart", Toast.LENGTH_SHORT).show();
+
+                        // Send broadcast to update cart badge
+                        Intent intent = new Intent("UPDATE_CART_BADGE");
+                        intent.putExtra("cartItemCount", cartList.size());
+                        sendBroadcast(intent);
                     });
                 } else {
                     runOnUiThread(() ->
@@ -204,9 +209,7 @@ public class CartActivity extends AppCompatActivity {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
                 e.printStackTrace();
-                runOnUiThread(() ->
-                        Toast.makeText(CartActivity.this, "Failed to clear cart items", Toast.LENGTH_SHORT).show()
-                );
+                runOnUiThread(() -> Toast.makeText(CartActivity.this, "Failed to clear cart items", Toast.LENGTH_SHORT).show());
             }
 
             @Override
@@ -216,20 +219,25 @@ public class CartActivity extends AppCompatActivity {
                         cartList.clear();
                         cartAdapter.notifyDataSetChanged();
                         cartTotalPrice = 0.0;
-                        totalunitprice = 0.0;
+                        totalUnitPrice = 0.0;
                         totalPriceTextView.setText("$0.00");
-                        totaluniTextReview.setText("$0.00");
+                        totalUnitPriceTextView.setText("$0.00");
+
+                        sharedPreferences.edit().putInt("cartItemCount", 0).apply();
+
+
+                        Intent intent = new Intent("UPDATE_CART_BADGE");
+                        intent.putExtra("cartItemCount", 0);
+                        sendBroadcast(intent);
+
                         Toast.makeText(CartActivity.this, "All cart items cleared", Toast.LENGTH_SHORT).show();
                     });
                 } else {
-                    runOnUiThread(() ->
-                            Toast.makeText(CartActivity.this, "Failed to clear cart items", Toast.LENGTH_SHORT).show()
-                    );
+                    runOnUiThread(() -> Toast.makeText(CartActivity.this, "Failed to clear cart items", Toast.LENGTH_SHORT).show());
                 }
             }
         });
     }
-
 
     public void updateCartItemQuantity(int itemId, int quantity) {
         ApiClient.updateCartItemQuantity(itemId, quantity, new Callback() {
@@ -255,19 +263,30 @@ public class CartActivity extends AppCompatActivity {
                             }
                         }
 
-                        // Recalculate total prices
+                        // Recalculate total price
                         cartTotalPrice = 0.0;
-                        totalunitprice = 0.0;
+                        totalUnitPrice = 0.0;
                         for (CartItem item : cartList) {
                             cartTotalPrice += item.getTotalPrice();
-                            totalunitprice += item.getUnitPrice();
+                            totalUnitPrice += item.getUnitPrice();
                         }
 
-                        // Update UI
+                        // Update total price display
                         totalPriceTextView.setText("$" + String.format("%.2f", cartTotalPrice));
-                        totaluniTextReview.setText("$" + String.format("%.2f", totalunitprice));
+                        totalUnitPriceTextView.setText("$" + String.format("%.2f", totalUnitPrice));
+
+                        // Update cart item count in SharedPreferences
+                        SharedPreferences sharedPreferences = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
+                        sharedPreferences.edit().putInt("cartItemCount", cartList.size()).apply();
+
+                        // Notify adapter of data change
                         cartAdapter.notifyDataSetChanged();
-                        Toast.makeText(CartActivity.this, "Quantity updated successfully", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(CartActivity.this, "Quantity updated", Toast.LENGTH_SHORT).show();
+
+                        // Send broadcast to update cart badge
+                        Intent intent = new Intent("UPDATE_CART_BADGE");
+                        intent.putExtra("cartItemCount", cartList.size());
+                        sendBroadcast(intent);
                     });
                 } else {
                     runOnUiThread(() ->
@@ -277,6 +296,4 @@ public class CartActivity extends AppCompatActivity {
             }
         });
     }
-
-
 }

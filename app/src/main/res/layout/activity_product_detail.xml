@@ -25,6 +25,19 @@
         app:layout_constraintVertical_bias="0.533"
         app:tint="@android:color/black" />
 
+    <TextView
+        android:id="@+id/cart_badge"
+        android:layout_width="12dp"
+        android:layout_height="12dp"
+        android:layout_marginEnd="8dp"
+        android:background="@drawable/badge_circle"
+        android:gravity="center"
+        android:textColor="@android:color/white"
+        android:textSize="10sp"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="@id/ic_cart"
+        app:layout_constraintTop_toTopOf="@id/ic_cart" />
+
     <ImageView
         android:id="@+id/product_image_detail"
         android:layout_width="0dp"
@@ -36,9 +49,6 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toTopOf="@id/scrollView"
         tools:src="@tools:sample/backgrounds/scenic" />
-
-
-
 
     <ImageButton
         android:id="@+id/back_button"
