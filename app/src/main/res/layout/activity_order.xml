@@ -113,18 +113,35 @@
                         android:textAppearance="?attr/textAppearanceHeadline6"
                         android:layout_marginBottom="12dp"/>
 
-                    <com.google.android.material.textfield.TextInputLayout
-                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                    <LinearLayout
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content">
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
 
-                        <AutoCompleteTextView
-                            android:id="@+id/spinner_store_location"
-                            android:layout_width="match_parent"
+                        <com.google.android.material.textfield.TextInputLayout
+                            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:inputType="none"
-                            android:hint="Select store location"/>
-                    </com.google.android.material.textfield.TextInputLayout>
+                            android:layout_weight="1"
+                            android:layout_marginEnd="8dp">
+
+                            <AutoCompleteTextView
+                                android:id="@+id/spinner_store_location"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="none"
+                                android:hint="Select store location"/>
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/button_map_marker"
+                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                            android:layout_width="51dp"
+                            android:layout_height="wrap_content"
+                            android:contentDescription="Show on map"
+                            app:icon="@drawable/ic_marker" />
+
+                    </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

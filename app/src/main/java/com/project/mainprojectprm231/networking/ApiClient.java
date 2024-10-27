@@ -31,6 +31,14 @@ public class ApiClient {
         client.newCall(request).enqueue(callback);
     }
 
+    public static void fetchStoreLocationDetail(int id ,Callback callback) {
+        Request request = new Request.Builder()
+                .url(BASE_URL + "/location/" + id)
+                .build();
+
+        client.newCall(request).enqueue(callback);
+    }
+
     public static void fetchCartItems(int userId, int page, int size, Callback callback) {
         String url = String.format(BASE_URL + "/cart?id=%d&page=%d&size=%d", userId, page, size);
         Request request = new Request.Builder()
