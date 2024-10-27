@@ -75,7 +75,8 @@ public class CartActivity extends AppCompatActivity {
         // Set click listeners
         backButton.setOnClickListener(v -> onBackPressed());
         checkoutButton.setOnClickListener(v -> {
-            Toast.makeText(CartActivity.this, "Checkout cart", Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(CartActivity.this, OrderActivity.class);
+            startActivity(intent);
         });
         deleteAllButton.setOnClickListener(v -> clearAllCartItems());
 
