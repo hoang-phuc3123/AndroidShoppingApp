@@ -1,18 +1,17 @@
-        package com.project.mainprojectprm231;
+package com.project.mainprojectprm231;
+
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -35,6 +34,9 @@ import okhttp3.Response;
 public class CartActivity extends AppCompatActivity {
 
     private static final String PREF_NAME = "UserPrefs";
+    private static final String CART_ITEM_COUNT_KEY = "cartItemCount";
+    private static final String CART_ID_KEY = "cartId";
+    private static final String UPDATE_CART_BADGE_ACTION = "UPDATE_CART_BADGE";
 
     private List<CartItem> cartList;
     private RecyclerView recyclerView;
@@ -47,170 +49,128 @@ public class CartActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_cart);
 
-        // Initialize cartList
+        // Initialize cart list and views
         cartList = new ArrayList<>();
+        initViews();
 
-        // Initialize views
-        recyclerView = findViewById(R.id.recyclerViewCart);
-        totalPriceTextView = findViewById(R.id.total_value);
-        totalUnitPriceTextView = findViewById(R.id.unitpricevalue);
-        ImageView backButton = findViewById(R.id.back_buttoncart);
-        Button checkoutButton = findViewById(R.id.button_checkout);
-        ImageView deleteAllButton = findViewById(R.id.deleteall);
-
-        // Setup RecyclerView
+        // Set up RecyclerView
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         cartAdapter = new CartAdapter(cartList, this);
         recyclerView.setAdapter(cartAdapter);
 
+        // Handle insets
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.cartscreen), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            v.setPadding(
+                    insets.getInsets(WindowInsetsCompat.Type.systemBars()).left,
+                    insets.getInsets(WindowInsetsCompat.Type.systemBars()).top,
+                    insets.getInsets(WindowInsetsCompat.Type.systemBars()).right,
+                    insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom
+            );
             return insets;
         });
 
-        // Set click listeners
-        backButton.setOnClickListener(v -> onBackPressed());
-        checkoutButton.setOnClickListener(v -> {
-            Intent intent = new Intent(CartActivity.this, OrderActivity.class);
-            startActivity(intent);
-        });
-        deleteAllButton.setOnClickListener(v -> clearAllCartItems());
-
-        // Fetch cart items when the activity is created
+        // Fetch cart items initially
         fetchCartItems();
     }
 
+    private void initViews() {
+        recyclerView = findViewById(R.id.recyclerViewCart);
+        totalPriceTextView = findViewById(R.id.total_value);
+        totalUnitPriceTextView = findViewById(R.id.unitpricevalue);
+
+        ImageView backButton = findViewById(R.id.back_buttoncart);
+        Button checkoutButton = findViewById(R.id.button_checkout);
+        ImageView deleteAllButton = findViewById(R.id.deleteall);
+
+        backButton.setOnClickListener(v -> onBackPressed());
+        checkoutButton.setOnClickListener(v -> startActivity(new Intent(this, OrderActivity.class)));
+        deleteAllButton.setOnClickListener(v -> clearAllCartItems());
+    }
+
     private void fetchCartItems() {
-        int page = 0;
-        int size = cartList.size();
+        int cartId = getCartIdFromPreferences();
 
-        SharedPreferences sharedPreferences = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
-        int cartId = sharedPreferences.getInt("cartId", 0);
-
-        ApiClient.fetchCartItems(cartId, page, size, new Callback() {
+        ApiClient.fetchCartItems(cartId, 0, cartList.size(), new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                e.printStackTrace();
-                runOnUiThread(() ->
-                        Toast.makeText(CartActivity.this, "Failed to fetch cart items", Toast.LENGTH_SHORT).show()
-                );
+                runOnUiThread(() -> showToast("Failed to fetch cart items"));
             }
 
             @Override
             public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
                 if (response.isSuccessful()) {
-                    String jsonResponse = response.body().string();
-                    Gson gson = new Gson();
-                    ApiCartResponse apiCartResponse = gson.fromJson(jsonResponse, ApiCartResponse.class);
-
-                    runOnUiThread(() -> {
-                        if (apiCartResponse != null && apiCartResponse.isSuccess() && apiCartResponse.getData() != null) {
-                            // Clear existing cart items and add new ones
-                            cartList.clear();
-                            cartList.addAll(apiCartResponse.getData().getContent());
-
-                            if (!cartList.isEmpty()) {
-                                // Reset cartTotalPrice
-                                cartTotalPrice = 0.0;
-                                totalUnitPrice = 0.0;
-                                // Calculate total price of all items
-                                for (CartItem item : cartList) {
-                                    cartTotalPrice += item.getTotalPrice();
-                                    totalUnitPrice += item.getUnitPrice();
-                                    Log.d("TAG", "onResponse: " + item.getTotalPrice());
-                                }
-
-                                // Update total price display
-                                totalPriceTextView.setText("$" + String.format("%.2f", cartTotalPrice));
-                                totalUnitPriceTextView.setText("$" + String.format("%.2f", totalUnitPrice));
-                                // Notify adapter of data change
-                                cartAdapter.notifyDataSetChanged();
-                            } else {
-                                Toast.makeText(CartActivity.this, "No cart items available", Toast.LENGTH_SHORT).show();
-                            }
-                        } else {
-                            Toast.makeText(CartActivity.this, "No cart items available", Toast.LENGTH_SHORT).show();
-                        }
-                    });
+                    ApiCartResponse apiCartResponse = new Gson().fromJson(response.body().string(), ApiCartResponse.class);
+                    runOnUiThread(() -> handleCartResponse(apiCartResponse));
                 } else {
-                    runOnUiThread(() ->
-                            Toast.makeText(CartActivity.this, "Failed to fetch cart items", Toast.LENGTH_SHORT).show()
-                    );
+                    runOnUiThread(() -> showToast("Failed to fetch cart items"));
                 }
             }
         });
+    }
+
+    private void handleCartResponse(ApiCartResponse apiCartResponse) {
+        if (apiCartResponse != null && apiCartResponse.isSuccess()) {
+            cartList.clear();
+            cartList.addAll(apiCartResponse.getData().getContent());
+            updateCartPrices();
+            cartAdapter.notifyDataSetChanged();
+        } else {
+            showToast("No cart items available");
+        }
+    }
+
+    public void updateCartItemQuantity(int itemId, int newQuantity) {
+        for (CartItem item : cartList) {
+            if (item.getItemId() == itemId) {
+                item.setQuantity(newQuantity);
+                updateCartPrices();
+                break;
+            }
+        }
     }
 
     public void removeFromCart(int itemId) {
         ApiClient.removeFromCart(itemId, new Callback() {
-
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                e.printStackTrace();
-                runOnUiThread(() ->
-                        Toast.makeText(CartActivity.this, "Failed to remove item from cart", Toast.LENGTH_SHORT).show()
-                );
+                runOnUiThread(() -> showToast("Failed to remove item from cart"));
             }
 
             @Override
             public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
                 if (response.isSuccessful()) {
                     runOnUiThread(() -> {
-                        // Remove item from cartList
-                        for (CartItem item : cartList) {
-                            if (item.getItemId() == itemId) {
-                                cartList.remove(item);
-                                break;
-                            }
-                        }
-
-                        // Recalculate total price
-                        cartTotalPrice = 0.0;
-                        totalUnitPrice = 0.0;
-                        for (CartItem item : cartList) {
-                            cartTotalPrice += item.getTotalPrice();
-                            totalUnitPrice += item.getUnitPrice();
-                        }
-
-                        // Update total price display
-                        totalPriceTextView.setText("$" + String.format("%.2f", cartTotalPrice));
-                        totalUnitPriceTextView.setText("$" + String.format("%.2f", totalUnitPrice));
-
-                        // Update cart item count in SharedPreferences
-                        SharedPreferences sharedPreferences = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
-                        sharedPreferences.edit().putInt("cartItemCount", cartList.size()).apply();
-
-                        // Notify adapter of data change
+                        removeItemFromList(itemId);
+                        updateCartPrices();
                         cartAdapter.notifyDataSetChanged();
-                        Toast.makeText(CartActivity.this, "Item removed from cart", Toast.LENGTH_SHORT).show();
-
-                        // Send broadcast to update cart badge
-                        Intent intent = new Intent("UPDATE_CART_BADGE");
-                        intent.putExtra("cartItemCount", cartList.size());
-                        sendBroadcast(intent);
+                        updateCartItemCountInPreferences(cartList.size());
+                        sendCartUpdateBroadcast();
+                        showToast("Item removed from cart");
                     });
                 } else {
-                    runOnUiThread(() ->
-                            Toast.makeText(CartActivity.this, "Failed to remove item from cart", Toast.LENGTH_SHORT).show()
-                    );
+                    runOnUiThread(() -> showToast("Failed to remove item from cart"));
                 }
             }
         });
     }
 
-    private void clearAllCartItems() {
-        SharedPreferences sharedPreferences = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
-        int cartId = sharedPreferences.getInt("cartId", 0);
+    private void removeItemFromList(int itemId) {
+        for (CartItem item : cartList) {
+            if (item.getItemId() == itemId) {
+                cartList.remove(item);
+                break;
+            }
+        }
+    }
 
+    private void clearAllCartItems() {
+        int cartId = getCartIdFromPreferences();
         ApiClient.clearCart(cartId, new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                e.printStackTrace();
-                runOnUiThread(() -> Toast.makeText(CartActivity.this, "Failed to clear cart items", Toast.LENGTH_SHORT).show());
+                runOnUiThread(() -> showToast("Failed to clear cart items"));
             }
 
             @Override
@@ -218,83 +178,47 @@ public class CartActivity extends AppCompatActivity {
                 if (response.isSuccessful()) {
                     runOnUiThread(() -> {
                         cartList.clear();
+                        updateCartPrices();
                         cartAdapter.notifyDataSetChanged();
-                        cartTotalPrice = 0.0;
-                        totalUnitPrice = 0.0;
-                        totalPriceTextView.setText("$0.00");
-                        totalUnitPriceTextView.setText("$0.00");
-
-                        sharedPreferences.edit().putInt("cartItemCount", 0).apply();
-
-
-                        Intent intent = new Intent("UPDATE_CART_BADGE");
-                        intent.putExtra("cartItemCount", 0);
-                        sendBroadcast(intent);
-
-                        Toast.makeText(CartActivity.this, "All cart items cleared", Toast.LENGTH_SHORT).show();
+                        updateCartItemCountInPreferences(0);
+                        sendCartUpdateBroadcast();
+                        showToast("All cart items cleared");
                     });
                 } else {
-                    runOnUiThread(() -> Toast.makeText(CartActivity.this, "Failed to clear cart items", Toast.LENGTH_SHORT).show());
+                    runOnUiThread(() -> showToast("Failed to clear cart items"));
                 }
             }
         });
     }
 
-    public void updateCartItemQuantity(int itemId, int quantity) {
-        ApiClient.updateCartItemQuantity(itemId, quantity, new Callback() {
-            @Override
-            public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                e.printStackTrace();
-                runOnUiThread(() ->
-                        Toast.makeText(CartActivity.this, "Failed to update quantity", Toast.LENGTH_SHORT).show()
-                );
-            }
+    private void updateCartPrices() {
+        cartTotalPrice = 0.0;
+        totalUnitPrice = 0.0;
+        for (CartItem item : cartList) {
+            cartTotalPrice += item.getTotalPrice();
+            totalUnitPrice += item.getUnitPrice();
+        }
+        totalPriceTextView.setText(String.format("$%.2f", cartTotalPrice));
+        totalUnitPriceTextView.setText(String.format("$%.2f", totalUnitPrice));
+    }
 
-            @Override
-            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                if (response.isSuccessful()) {
-                    runOnUiThread(() -> {
-                        // Update the cart item in the list
-                        for (CartItem item : cartList) {
-                            if (item.getItemId() == itemId) {
-                                item.setQuantity(quantity);
-                                // Update total price for the item
-                                item.setTotalPrice(item.getUnitPrice() * quantity);
-                                break;
-                            }
-                        }
+    private void updateCartItemCountInPreferences(int count) {
+        SharedPreferences sharedPreferences = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
+        sharedPreferences.edit().putInt(CART_ITEM_COUNT_KEY, count).apply();
+    }
 
-                        // Recalculate total price
-                        cartTotalPrice = 0.0;
-                        totalUnitPrice = 0.0;
-                        for (CartItem item : cartList) {
-                            cartTotalPrice += item.getTotalPrice();
-                            totalUnitPrice += item.getUnitPrice();
-                        }
+    private int getCartIdFromPreferences() {
+        SharedPreferences sharedPreferences = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
+        return sharedPreferences.getInt(CART_ID_KEY, 0);
+    }
 
-                        // Update total price display
-                        totalPriceTextView.setText("$" + String.format("%.2f", cartTotalPrice));
-                        totalUnitPriceTextView.setText("$" + String.format("%.2f", totalUnitPrice));
+    private void sendCartUpdateBroadcast() {
+        Intent intent = new Intent(UPDATE_CART_BADGE_ACTION);
+        intent.putExtra(CART_ITEM_COUNT_KEY, cartList.size());
+        sendBroadcast(intent);
+    }
 
-                        // Update cart item count in SharedPreferences
-                        SharedPreferences sharedPreferences = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
-                        sharedPreferences.edit().putInt("cartItemCount", cartList.size()).apply();
-
-                        // Notify adapter of data change
-                        cartAdapter.notifyDataSetChanged();
-                        Toast.makeText(CartActivity.this, "Quantity updated", Toast.LENGTH_SHORT).show();
-
-                        // Send broadcast to update cart badge
-                        Intent intent = new Intent("UPDATE_CART_BADGE");
-                        intent.putExtra("cartItemCount", cartList.size());
-                        sendBroadcast(intent);
-                    });
-                } else {
-                    runOnUiThread(() ->
-                            Toast.makeText(CartActivity.this, "Failed to update quantity", Toast.LENGTH_SHORT).show()
-                    );
-                }
-            }
-        });
+    private void showToast(String message) {
+        Toast.makeText(CartActivity.this, message, Toast.LENGTH_SHORT).show();
     }
 }

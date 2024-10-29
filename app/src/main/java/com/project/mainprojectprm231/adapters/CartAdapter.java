@@ -11,9 +11,9 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-import com.project.mainprojectprm231.CartActivity;
 
 import com.bumptech.glide.Glide;
+import com.project.mainprojectprm231.CartActivity;
 import com.project.mainprojectprm231.R;
 import com.project.mainprojectprm231.models.CartItem;
 
@@ -55,11 +55,7 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
             int currentQuantity = cartItem.getQuantity();
             int newQuantity = currentQuantity + 1;
 
-//            cartItem.setQuantity(currentQuantity + 1);
-//            holder.productQuantity.setText(String.valueOf(cartItem.getQuantity()));
-            // Update the price based on new quantity
             ((CartActivity) context).updateCartItemQuantity(cartItem.getItemId(), newQuantity);
-
             notifyItemChanged(position);
         });
 
@@ -68,11 +64,9 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
             int currentQuantity = cartItem.getQuantity();
             if (currentQuantity > 1) {
                 int newQuantity = currentQuantity - 1;
-//                cartItem.setQuantity(currentQuantity - 1);
-//                holder.productQuantity.setText(String.valueOf(cartItem.getQuantity()));
-                // Update the price based on new quantity
-                ((CartActivity) context).updateCartItemQuantity(cartItem.getItemId(), newQuantity);
 
+                ((CartActivity) context).updateCartItemQuantity(cartItem.getItemId(), newQuantity);
+                notifyItemChanged(position);
             }
         });
 
@@ -82,11 +76,6 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
             Log.d("TAG", "itemId: " + itemId);
             ((CartActivity) context).removeFromCart(itemId); // Call remove method in CartActivity
         });
-    }
-
-    private void updateItemPrice(CartItem cartItem) {
-        double newTotalPrice = cartItem.getUnitPrice() * cartItem.getQuantity();
-        cartItem.setTotalPrice(newTotalPrice);
     }
 
     @Override

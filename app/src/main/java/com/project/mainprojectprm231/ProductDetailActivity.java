@@ -1,12 +1,12 @@
 package com.project.mainprojectprm231;
 
+import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.graphics.Color;
-import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -18,6 +18,7 @@ import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.bumptech.glide.Glide;
 import com.project.mainprojectprm231.networking.ApiClient;
@@ -34,13 +35,20 @@ public class ProductDetailActivity extends AppCompatActivity {
     private static final String PREF_NAME = "UserPrefs";
     private ImageView cart;
     private BroadcastReceiver cartUpdateReceiver;
+    private ProgressDialog progressDialog;
+    private SharedPreferences sharedPreferences;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_product_detail);
 
-        // Retrieve data from Intent
+        sharedPreferences = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
+        progressDialog = new ProgressDialog(this);
+        progressDialog.setMessage("Loading...");
+        progressDialog.setCancelable(false);
+
+        // Retrieve product data from Intent
         String name = getIntent().getStringExtra("productName");
         String imageUrl = getIntent().getStringExtra("imageUrl");
         double price = getIntent().getDoubleExtra("price", 0);
@@ -49,14 +57,13 @@ public class ProductDetailActivity extends AppCompatActivity {
         float rating = getIntent().getFloatExtra("rating", 0);
         int productId = getIntent().getIntExtra("productId", 0);
 
-        // Check if required data is available
         if (name == null || imageUrl == null || description == null || brand == null) {
             Toast.makeText(this, "Missing product details", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
 
-        // Set up UI elements
+        // UI Elements
         TextView productName = findViewById(R.id.product_name_detail);
         TextView productPrice = findViewById(R.id.product_price_detail);
         TextView productDescription = findViewById(R.id.product_description_detail);
@@ -67,7 +74,7 @@ public class ProductDetailActivity extends AppCompatActivity {
         ImageView backButton = findViewById(R.id.back_button);
         cart = findViewById(R.id.ic_cart);
 
-        // Set data to the views
+        // Set product data
         productName.setText(name);
         productPrice.setText(String.format(Locale.getDefault(), "$%.2f", price));
         productDescription.setText(description);
@@ -78,45 +85,11 @@ public class ProductDetailActivity extends AppCompatActivity {
         // Handle back button
         backButton.setOnClickListener(v -> onBackPressed());
 
-        // Display initial cart item count on badge
+        // Display initial cart item count
         updateCartBadge(getCartItemCount());
 
-        // Handle add to cart button click
-        addToCartButton.setOnClickListener(v -> {
-            SharedPreferences sharedPreferences = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
-            int userId = sharedPreferences.getInt("userId", 0);
+        addToCartButton.setOnClickListener(v -> addToCart(productId));
 
-            // Validate the product ID, user ID, and cart ID
-            if (productId == 0 || userId == 0) {
-                Toast.makeText(ProductDetailActivity.this, "Invalid cart details", Toast.LENGTH_SHORT).show();
-                Log.d("ProductDetailActivity", "Product ID: " + productId);
-                Log.d("ProductDetailActivity", "User ID: " + userId);
-                return;
-            }
-
-            // Make the API call to add the product to the cart
-            ApiClient.addToCart(productId, userId, new Callback() {
-                @Override
-                public void onFailure(Call call, IOException e) {
-                    runOnUiThread(() -> Toast.makeText(ProductDetailActivity.this, "Failed to add to cart", Toast.LENGTH_SHORT).show());
-                }
-
-                @Override
-                public void onResponse(Call call, Response response) throws IOException {
-                    if (response.isSuccessful()) {
-                        runOnUiThread(() -> {
-                            // Update cart badge
-                            updateCartBadge(getCartItemCount() + 1);
-                            Toast.makeText(ProductDetailActivity.this, "Added to cart", Toast.LENGTH_SHORT).show();
-                        });
-                    } else {
-                        runOnUiThread(() -> Toast.makeText(ProductDetailActivity.this, "Failed to add to cart", Toast.LENGTH_SHORT).show());
-                    }
-                }
-            });
-        });
-
-        // Handle cart icon click
         cart.setOnClickListener(v -> {
             Intent intent = new Intent(ProductDetailActivity.this, CartActivity.class);
             startActivityForResult(intent, 1);
@@ -132,19 +105,61 @@ public class ProductDetailActivity extends AppCompatActivity {
         };
 
         IntentFilter filter = new IntentFilter("UPDATE_CART_BADGE");
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            registerReceiver(cartUpdateReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
-        } else {
-            registerReceiver(cartUpdateReceiver, filter);
-        }
+        LocalBroadcastManager.getInstance(this).registerReceiver(cartUpdateReceiver, filter);
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         if (cartUpdateReceiver != null) {
-            unregisterReceiver(cartUpdateReceiver);
+            LocalBroadcastManager.getInstance(this).unregisterReceiver(cartUpdateReceiver);
         }
+    }
+
+    private void addToCart(int productId) {
+        int userId = sharedPreferences.getInt("userId", 0);
+
+        if (productId == 0 || userId == 0) {
+            Toast.makeText(ProductDetailActivity.this, "Invalid cart details", Toast.LENGTH_SHORT).show();
+            Log.d("ProductDetailActivity", "Product ID: " + productId);
+            Log.d("ProductDetailActivity", "User ID: " + userId);
+            return;
+        }
+
+        progressDialog.show();
+
+        ApiClient.addToCart(productId, userId, new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                runOnUiThread(() -> {
+                    progressDialog.dismiss();
+                    Toast.makeText(ProductDetailActivity.this, "Failed to add to cart", Toast.LENGTH_SHORT).show();
+                });
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                runOnUiThread(() -> progressDialog.dismiss());
+
+                if (response.isSuccessful()) {
+                    runOnUiThread(() -> {
+                        // Update cart badge
+                        int newCount = getCartItemCount() + 1;
+                        saveCartItemCount(newCount);
+                        updateCartBadge(newCount);
+
+                        // Notify user
+                        Toast.makeText(ProductDetailActivity.this, "Added to cart", Toast.LENGTH_SHORT).show();
+
+                        // Broadcast cart update
+                        Intent intent = new Intent("CART_UPDATED");
+                        LocalBroadcastManager.getInstance(ProductDetailActivity.this).sendBroadcast(intent);
+                    });
+                } else {
+                    runOnUiThread(() -> Toast.makeText(ProductDetailActivity.this, "Failed to add to cart", Toast.LENGTH_SHORT).show());
+                }
+            }
+        });
     }
 
     private void updateCartBadge(int itemCount) {
@@ -158,8 +173,13 @@ public class ProductDetailActivity extends AppCompatActivity {
     }
 
     private int getCartItemCount() {
-        SharedPreferences sharedPreferences = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
         return sharedPreferences.getInt("cartItemCount", 0);
+    }
+
+    private void saveCartItemCount(int itemCount) {
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putInt("cartItemCount", itemCount);
+        editor.apply();
     }
 
     @Override
@@ -168,10 +188,7 @@ public class ProductDetailActivity extends AppCompatActivity {
         if (requestCode == 1 && resultCode == RESULT_OK) {
             boolean cartModified = data != null && data.getBooleanExtra("cartModified", false);
             if (cartModified) {
-                // Reset cart color to black
                 cart.setColorFilter(Color.BLACK);
-
-                // Update badge if cart was modified
                 updateCartBadge(getCartItemCount());
             }
         }
