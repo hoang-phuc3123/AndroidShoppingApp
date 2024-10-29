@@ -1,3 +1,38 @@
 <resources>
     <string name="app_name">MainProjectPRM231</string>
+    <string name="login">Login</string>
+    <string name="email">Email</string>
+    <string name="password">password</string>
+    <string name="register">Register</string>
+    <string name="click_to_login">Click To Login</string>
+    <string name="click_to_register">Click To Register</string>
+    <string name="logout">Logout</string>
+    <string name="home">Home</string>
+    <string name="products">Products</string>
+    <string name="profile">Profile</string>
+    <string name="profile_picture">Profile Picture</string>
+    <string name="john_doe">John Doe</string>
+    <string name="johndoe_example_com">johndoe@example.com</string>
+    <string name="edit_profile">Edit Profile</string>
+    <string name="brand">Brand</string>
+    <string name="min_price">Min Price</string>
+    <string name="max_price">Max Price</string>
+    <string name="min_rating">Min Rating</string>
+    <string name="apply_filters">Apply Filters</string>
+    <string name="favorites">Favorites</string>
+    <string name="back">Back</string>
+    <string name="add_to_cart">Add to Cart</string>
+    <string name="search_products">Search products</string>
+    <string name="filter">Filter</string>
+    <string name="cart">Cart</string>
+    <string name="description">Description</string>
+    <string name="phone">Phone</string>
+    <string name="address">Address</string>
+    <string name="store_location">Store Location</string>
+
+    <string-array name="sort_options">
+        <item>Price: Low to High</item>
+        <item>Price: High to Low</item>
+        <item>Category</item>
+    </string-array>
 </resources>
