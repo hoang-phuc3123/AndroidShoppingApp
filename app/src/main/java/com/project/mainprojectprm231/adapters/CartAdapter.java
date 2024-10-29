@@ -1,6 +1,7 @@
 package com.project.mainprojectprm231.adapters;
 
 import android.content.Context;
+import android.content.Intent;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -10,6 +11,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
@@ -57,6 +59,7 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
 
             ((CartActivity) context).updateCartItemQuantity(cartItem.getItemId(), newQuantity);
             notifyItemChanged(position);
+            sendCartUpdateBroadcast();
         });
 
         // Handle quantity decrease button click
@@ -67,6 +70,7 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
 
                 ((CartActivity) context).updateCartItemQuantity(cartItem.getItemId(), newQuantity);
                 notifyItemChanged(position);
+                sendCartUpdateBroadcast();
             }
         });
 
@@ -77,6 +81,17 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
             ((CartActivity) context).removeFromCart(itemId); // Call remove method in CartActivity
         });
     }
+
+    private void sendCartUpdateBroadcast() {
+        int totalQuantity = 0;
+        for (CartItem item : cartItems) {
+            totalQuantity += item.getQuantity();
+        }
+        Intent intent = new Intent("UPDATE_CART_BADGE");
+        intent.putExtra("cartItemCount", totalQuantity);
+        LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
+    }
+
 
     @Override
     public int getItemCount() {

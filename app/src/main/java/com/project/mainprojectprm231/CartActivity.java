@@ -16,6 +16,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.google.gson.Gson;
 import com.project.mainprojectprm231.models.ApiCartResponse;
@@ -75,6 +76,12 @@ public class CartActivity extends AppCompatActivity {
         fetchCartItems();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        refreshCartData();
+    }
+
     private void initViews() {
         recyclerView = findViewById(R.id.recyclerViewCart);
         totalPriceTextView = findViewById(R.id.total_value);
@@ -126,6 +133,7 @@ public class CartActivity extends AppCompatActivity {
             if (item.getItemId() == itemId) {
                 item.setQuantity(newQuantity);
                 updateCartPrices();
+                sendCartUpdateBroadcast();
                 break;
             }
         }
@@ -215,7 +223,31 @@ public class CartActivity extends AppCompatActivity {
     private void sendCartUpdateBroadcast() {
         Intent intent = new Intent(UPDATE_CART_BADGE_ACTION);
         intent.putExtra(CART_ITEM_COUNT_KEY, cartList.size());
-        sendBroadcast(intent);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+    }
+
+    public void refreshCartData() {
+        int cartId = getCartIdFromPreferences();
+
+        ApiClient.fetchCartItems(cartId, 0, cartList.size(), new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                runOnUiThread(() -> showToast("Failed to refresh cart items"));
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    ApiCartResponse apiCartResponse = new Gson().fromJson(response.body().string(), ApiCartResponse.class);
+                    runOnUiThread(() -> {
+                        handleCartResponse(apiCartResponse);
+                        sendCartUpdateBroadcast();
+                    });
+                } else {
+                    runOnUiThread(() -> showToast("Failed to refresh cart items"));
+                }
+            }
+        });
     }
 
     private void showToast(String message) {

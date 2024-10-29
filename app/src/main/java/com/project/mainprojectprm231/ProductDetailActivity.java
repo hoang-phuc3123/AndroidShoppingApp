@@ -19,8 +19,11 @@ import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import androidx.annotation.NonNull;
 
 import com.bumptech.glide.Glide;
+import com.google.gson.Gson;
+import com.project.mainprojectprm231.models.ApiCartResponse;
 import com.project.mainprojectprm231.networking.ApiClient;
 
 import java.io.IOException;
@@ -189,8 +192,52 @@ public class ProductDetailActivity extends AppCompatActivity {
             boolean cartModified = data != null && data.getBooleanExtra("cartModified", false);
             if (cartModified) {
                 cart.setColorFilter(Color.BLACK);
-                updateCartBadge(getCartItemCount());
+                refreshCartData();
             }
         }
+    }
+
+    private void refreshCartData() {
+        int cartId = sharedPreferences.getInt("cartId", 0);
+
+        ApiClient.fetchCartItems(cartId, 0, 100, new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                runOnUiThread(() -> showToast("Failed to refresh cart items"));
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    ApiCartResponse apiCartResponse = new Gson().fromJson(response.body().string(), ApiCartResponse.class);
+                    runOnUiThread(() -> {
+                        handleCartResponse(apiCartResponse);
+                        sendCartUpdateBroadcast();
+                    });
+                } else {
+                    runOnUiThread(() -> showToast("Failed to refresh cart items"));
+                }
+            }
+        });
+    }
+
+    private void handleCartResponse(ApiCartResponse apiCartResponse) {
+        if (apiCartResponse != null && apiCartResponse.isSuccess()) {
+            int itemCount = apiCartResponse.getData().getContent().size();
+            saveCartItemCount(itemCount);
+            updateCartBadge(itemCount);
+        } else {
+            showToast("No cart items available");
+        }
+    }
+
+    private void sendCartUpdateBroadcast() {
+        Intent intent = new Intent("UPDATE_CART_BADGE");
+        intent.putExtra("cartItemCount", getCartItemCount());
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+    }
+
+    private void showToast(String message) {
+        Toast.makeText(ProductDetailActivity.this, message, Toast.LENGTH_SHORT).show();
     }
 }
