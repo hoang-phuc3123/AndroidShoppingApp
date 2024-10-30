@@ -127,7 +127,7 @@ public class RegisterActivity extends AppCompatActivity {
                     public void run() {
                         progressBar.setVisibility(View.GONE);
                         if (response.isSuccessful()) {
-                            Toast.makeText(RegisterActivity.this, "Account created and registered with API.",
+                            Toast.makeText(RegisterActivity.this, "Account created and registered",
                                     Toast.LENGTH_SHORT).show();
                             Intent intent = new Intent(getApplicationContext(), LoginActivity.class);
                             startActivity(intent);
