@@ -41,8 +41,6 @@ public class MainActivity extends AppCompatActivity {
                     selectedFragment = new HomeFragment();
                 } else if (itemId == R.id.nav_profile) {
                     selectedFragment = new ProfileFragment();
-                } else if (itemId == R.id.nav_cart) {
-                    selectedFragment = new CartFragment();
                 }
                 if (selectedFragment != null) {
                     loadFragment(selectedFragment);
@@ -78,8 +76,6 @@ public class MainActivity extends AppCompatActivity {
             bottomNavigationView.setSelectedItemId(R.id.nav_favorites);
         } else if (currentFragment instanceof ProfileFragment) {
             bottomNavigationView.setSelectedItemId(R.id.nav_profile);
-        } else if (currentFragment instanceof CartFragment) {
-            bottomNavigationView.setSelectedItemId(R.id.nav_cart);
         }
     }
 }
