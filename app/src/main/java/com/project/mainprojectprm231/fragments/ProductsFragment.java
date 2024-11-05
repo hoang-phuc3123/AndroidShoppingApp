@@ -55,7 +55,7 @@ public class ProductsFragment extends Fragment {
         recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 2));
 
         searchEditText = view.findViewById(R.id.search_edit_text);
-        view.findViewById(R.id.filter_button).setOnClickListener(v -> showFilterDialog());
+//        view.findViewById(R.id.filter_button).setOnClickListener(v -> showFilterDialog());
 
         bannerViewPager = view.findViewById(R.id.banner_viewpager);
         bannerTabLayout = view.findViewById(R.id.banner_tab_layout);
