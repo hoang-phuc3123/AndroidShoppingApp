@@ -106,10 +106,10 @@ public class OrderActivity extends AppCompatActivity {
             public void onClick(View v) {
                 CreateOrder orderApi = new CreateOrder();
                 try {
-                    String totalString = String.format("%.0f", totalAmount);
+                    String totalString = String.format("%.0f", totalAmount * 23000);
                     JSONObject data = orderApi.createOrder(totalString);
                     String code = data.getString("return_code");
-                    Log.d("code.equals(\"1\")", "onClick: " + code.equals("1"));
+                    Log.d("totalString", "onClick: " + code.equals("1"));
                     if (code.equals("1")) {
                         String token = data.getString("zp_trans_token");
                         ZaloPaySDK.getInstance().payOrder(OrderActivity.this, token, "demozpdk://app", new PayOrderListener() {
