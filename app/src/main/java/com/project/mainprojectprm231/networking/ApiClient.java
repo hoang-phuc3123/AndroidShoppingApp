@@ -22,7 +22,7 @@ public class ApiClient {
 
         client.newCall(request).enqueue(callback);
     }
-    
+
     public static void fetchStoreLocation(Callback callback) {
         Request request = new Request.Builder()
                 .url(BASE_URL + "/location")
@@ -107,6 +107,33 @@ public class ApiClient {
         client.newCall(request).enqueue(callback);
     }
 
+    public static void updateQuantityCart(int itemId, int quantity, Callback callback) {
+        if (itemId <= 0 || (quantity <= 0)) {
+            Log.e("ApiClient", "Invalid parameters for addToCart. Item ID: " + itemId + ", Quantity: " + quantity);
+            return;
+        }
+
+        MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+        JSONObject jsonObject = new JSONObject();
+        try {
+            jsonObject.put("itemId", itemId);
+            jsonObject.put("quantity", quantity);
+
+            Log.d("ApiClient", "JSON request body: " + jsonObject.toString());
+        } catch (Exception e) {
+            Log.e("ApiClient", "Error creating JSON request body: " + e.getMessage());
+            return;
+        }
+
+        RequestBody body = RequestBody.create(JSON, jsonObject.toString());
+        Request request = new Request.Builder()
+                .url(BASE_URL + "/cart/update?itemId=" + itemId + "&quantity=" + quantity)
+                .put(body)
+                .build();
+
+        client.newCall(request).enqueue(callback);
+    }
+
     public static void removeFromCart(int itemId, Callback callback) {
         String url = BASE_URL + "/cart/remove?itemId=" + itemId;
         Request request = new Request.Builder()
@@ -139,7 +166,7 @@ public class ApiClient {
         Log.d("ApiClient", "Update cart URL: " + url);
         client.newCall(request).enqueue(callback);
     }
-    
-    
+
+
 
 }

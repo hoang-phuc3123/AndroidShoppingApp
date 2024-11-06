@@ -1,6 +1,10 @@
 package com.project.mainprojectprm231.adapters;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.Intent;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -10,14 +14,21 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.project.mainprojectprm231.CartActivity;
 import com.project.mainprojectprm231.R;
 import com.project.mainprojectprm231.models.CartItem;
+import com.project.mainprojectprm231.networking.ApiClient;
 
+import java.io.IOException;
 import java.util.List;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.Response;
 
 public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder> {
     private final List<CartItem> cartItems;
@@ -36,7 +47,7 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
     }
 
     @Override
-    public void onBindViewHolder(@NonNull CartViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull CartViewHolder holder, @SuppressLint("RecyclerView") int position) {
         CartItem cartItem = cartItems.get(position);
 
         // Set the data to the views
@@ -50,24 +61,62 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
                 .load(cartItem.getProductImage())
                 .into(holder.productImage);
 
-        // Handle quantity increase button click
+        // Handle quantity increase button click with debounce
         holder.buttonIncrease.setOnClickListener(v -> {
-            int currentQuantity = cartItem.getQuantity();
-            int newQuantity = currentQuantity + 1;
+            holder.handler.removeCallbacks(holder.debounceRunnable);
+            holder.debounceRunnable = () -> {
+                int currentQuantity = cartItem.getQuantity();
+                int newQuantity = currentQuantity + 1;
 
-            ((CartActivity) context).updateCartItemQuantity(cartItem.getItemId(), newQuantity);
-            notifyItemChanged(position);
+                ApiClient.updateQuantityCart(cartItem.getItemId(), newQuantity, new Callback() {
+                    @Override
+                    public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                        e.printStackTrace();
+                    }
+
+                    @Override
+                    public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                        if (response.isSuccessful()) {
+                            ((CartActivity) context).runOnUiThread(() -> {
+                                cartItem.setQuantity(newQuantity);
+                                notifyItemChanged(position);
+                                sendCartUpdateBroadcast();
+                            });
+                        }
+                    }
+                });
+            };
+            holder.handler.postDelayed(holder.debounceRunnable, 300); // 300ms debounce time
         });
 
-        // Handle quantity decrease button click
+        // Handle quantity decrease button click with debounce
         holder.buttonDecrease.setOnClickListener(v -> {
-            int currentQuantity = cartItem.getQuantity();
-            if (currentQuantity > 1) {
-                int newQuantity = currentQuantity - 1;
+            holder.handler.removeCallbacks(holder.debounceRunnable);
+            holder.debounceRunnable = () -> {
+                int currentQuantity = cartItem.getQuantity();
+                if (currentQuantity > 1) {
+                    int newQuantity = currentQuantity - 1;
 
-                ((CartActivity) context).updateCartItemQuantity(cartItem.getItemId(), newQuantity);
-                notifyItemChanged(position);
-            }
+                    ApiClient.updateQuantityCart(cartItem.getItemId(), newQuantity, new Callback() {
+                        @Override
+                        public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                            e.printStackTrace();
+                        }
+
+                        @Override
+                        public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                            if (response.isSuccessful()) {
+                                ((CartActivity) context).runOnUiThread(() -> {
+                                    cartItem.setQuantity(newQuantity);
+                                    notifyItemChanged(position);
+                                    sendCartUpdateBroadcast();
+                                });
+                            }
+                        }
+                    });
+                }
+            };
+            holder.handler.postDelayed(holder.debounceRunnable, 300); // 300ms debounce time
         });
 
         // Handle delete item button click
@@ -76,6 +125,16 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
             Log.d("TAG", "itemId: " + itemId);
             ((CartActivity) context).removeFromCart(itemId); // Call remove method in CartActivity
         });
+    }
+
+    private void sendCartUpdateBroadcast() {
+        int totalQuantity = 0;
+        for (CartItem item : cartItems) {
+            totalQuantity += item.getQuantity();
+        }
+        Intent intent = new Intent("UPDATE_CART_BADGE");
+        intent.putExtra("cartItemCount", totalQuantity);
+        LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
     }
 
     @Override
@@ -92,6 +151,8 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
         Button buttonIncrease;
         Button buttonDecrease;
         Button trashButton;
+        Handler handler;
+        Runnable debounceRunnable;
 
         public CartViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -103,6 +164,7 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
             buttonIncrease = itemView.findViewById(R.id.buttonIncrease);
             buttonDecrease = itemView.findViewById(R.id.buttonDecrease);
             trashButton = itemView.findViewById(R.id.trashcan);
+            handler = new Handler(Looper.getMainLooper());
         }
     }
 }
